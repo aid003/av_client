@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "@/shared/ui/globals.css";
+import { TelegramProvider } from "@/shared/providers/TelegramProvider";
+import { AuthProxy } from "@/shared/providers/AuthProxy";
+import { ErudaDevTools } from "@/shared/providers/ErudaDevTools";
 
 export const metadata: Metadata = {
   title: "app",
@@ -13,7 +16,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        {process.env.NODE_ENV === 'development' ? <ErudaDevTools /> : null}
+        <TelegramProvider>
+          <AuthProxy>
+            {children}
+          </AuthProxy>
+        </TelegramProvider>
+      </body>
     </html>
   );
 }

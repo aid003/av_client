@@ -4,15 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
-    "@telegram-apps/sdk-react": "^3.3.9",
+    "@tma.js/sdk-react": "^3.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "eruda": "^3.4.3",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
     "react": "19.2.0",
