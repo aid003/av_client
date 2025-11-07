@@ -20,6 +20,6 @@ export interface TelegramAuthRequest {
 
 export interface TelegramAuthError {
   message: string;
-  code: 'INVALID_INIT_DATA' | 'INVALID_SIGNATURE' | 'INTERNAL_ERROR';
+  code: 'INVALID_INIT_DATA' | 'INVALID_SIGNATURE' | 'INTERNAL_ERROR' | 'USER_BLOCKED';
 }
 

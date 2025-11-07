@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTelegram } from './TelegramProvider';
-import { authenticateTelegram } from '@/shared/lib/api/telegram';
+import { authenticateTelegram, UserBlockedError } from '@/shared/lib/api/telegram';
 import type { TelegramAuthResponse } from '@/shared/types/telegram';
 
 interface AuthProxyProps {
@@ -16,6 +16,7 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
   const [authData, setAuthData] = useState<TelegramAuthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [blockedReason, setBlockedReason] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -37,6 +38,11 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
           localStorage.setItem('telegram_auth', JSON.stringify(response));
         }
       } catch (err) {
+        if (err instanceof UserBlockedError) {
+          setBlockedReason(err.reason);
+          setError(null);
+          return;
+        }
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
@@ -63,6 +69,20 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
           </div>
         )}
       </>
+    );
+  }
+
+  if (blockedReason) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center max-w-sm">
+          <p className="text-xl font-semibold mb-2">Ваш аккаунт заблокирован</p>
+          <p className="text-sm text-gray-600 mb-4">
+            {blockedReason}
+          </p>
+          <p className="text-xs text-gray-500">Если вы считаете, что это ошибка, обратитесь в поддержку.</p>
+        </div>
+      </div>
     );
   }
 

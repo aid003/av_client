@@ -1,5 +1,13 @@
-import type { TelegramAuthRequest, TelegramAuthResponse } from '@/shared/types/telegram';
+import type { TelegramAuthRequest, TelegramAuthResponse, TelegramAuthError } from '@/shared/types/telegram';
 import { config } from '@/shared/lib/config';
+
+export class UserBlockedError extends Error {
+  public readonly code: 'USER_BLOCKED' = 'USER_BLOCKED';
+  constructor(public readonly reason: string) {
+    super(reason);
+    this.name = 'UserBlockedError';
+  }
+}
 
 export async function authenticateTelegram(
   initData: string
@@ -35,6 +43,17 @@ export async function authenticateTelegram(
   }
 
   if (!response.ok) {
+    // Специальная обработка 403 USER_BLOCKED
+    if (response.status === 403) {
+      try {
+        const errorJson = (await response.json()) as TelegramAuthError;
+        if (errorJson?.code === 'USER_BLOCKED') {
+          throw new UserBlockedError(errorJson.message);
+        }
+      } catch {
+        // если парсинг не удался — упадём в общий обработчик ниже
+      }
+    }
     let serverMessage = 'Ошибка авторизации';
     let serverCode: string | undefined;
     try {
