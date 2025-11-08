@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTelegram } from './TelegramProvider';
 import { authenticateTelegram, UserBlockedError } from '@/shared/lib/api/telegram';
 import type { TelegramAuthResponse } from '@/shared/types/telegram';
+import { useAuthStore } from '@/shared/lib/store';
 
 interface AuthProxyProps {
   children: ReactNode;
@@ -12,8 +13,8 @@ interface AuthProxyProps {
 
 export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
   const { isInitialized, initData } = useTelegram();
+  const setAuthData = useAuthStore((state) => state.setAuthData);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const [authData, setAuthData] = useState<TelegramAuthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -31,12 +32,9 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
         }
 
         const response = await authenticateTelegram(initData);
-        setAuthData(response);
         
-        // Сохраняем данные пользователя в localStorage для дальнейшего использования
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('telegram_auth', JSON.stringify(response));
-        }
+        // Сохраняем данные в Zustand store (который сам персистит в localStorage)
+        setAuthData(response);
       } catch (err) {
         if (err instanceof UserBlockedError) {
           setBlockedReason(err.reason);
