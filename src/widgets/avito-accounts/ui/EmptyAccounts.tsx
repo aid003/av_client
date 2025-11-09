@@ -5,7 +5,9 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent,
 } from "@/shared/ui/components/ui/card";
+import { AddAccountButton } from "@/features/add-avito-account";
 
 export function EmptyAccounts() {
   return (
@@ -16,6 +18,9 @@ export function EmptyAccounts() {
           У вас пока нет привязанных аккаунтов Авито
         </CardDescription>
       </CardHeader>
+      <CardContent>
+        <AddAccountButton />
+      </CardContent>
     </Card>
   );
 }

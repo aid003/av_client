@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTelegramAuth } from "@/shared/hooks/useTelegramAuth";
 import { getAvitoAccounts } from "@/entities/avito";
 import type { AvitoAccount, AvitoAccountsError } from "@/entities/avito";
@@ -12,31 +12,31 @@ export function useAvitoAccounts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      if (!authData?.tenant?.id) {
-        setError("Тенант не найден");
-        setLoading(false);
-        return;
-      }
+  const fetchAccounts = useCallback(async () => {
+    if (!authData?.tenant?.id) {
+      setError("Тенант не найден");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getAvitoAccounts(authData.tenant.id);
-        setAccounts(data.accounts);
-        setTotal(data.total);
-      } catch (err) {
-        const error = err as AvitoAccountsError;
-        setError(error.message || "Произошла ошибка при загрузке аккаунтов");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAccounts();
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAvitoAccounts(authData.tenant.id);
+      setAccounts(data.accounts);
+      setTotal(data.total);
+    } catch (err) {
+      const error = err as AvitoAccountsError;
+      setError(error.message || "Произошла ошибка при загрузке аккаунтов");
+    } finally {
+      setLoading(false);
+    }
   }, [authData?.tenant?.id]);
 
-  return { accounts, total, loading, error };
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  return { accounts, total, loading, error, refetch: fetchAccounts };
 }
 

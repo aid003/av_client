@@ -1,0 +1,2 @@
+export { DeleteAccountButton } from "./ui";
+
