@@ -64,7 +64,9 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       
       // Получаем тему из Telegram
       try {
-        const scheme = themeParams.colorScheme() ?? lp.themeParams?.colorScheme ?? 'dark';
+        // Проверяем isDark или используем fallback
+        const isDark = themeParams.isDark ?? lp.themeParams?.isDark ?? true;
+        const scheme = isDark ? 'dark' : 'light';
         setColorScheme(scheme);
         
         if (process.env.NODE_ENV === 'development') {

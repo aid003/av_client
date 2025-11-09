@@ -21,6 +21,7 @@ import {
   BookText,
   ChevronDown,
   ChevronUp,
+  MessageSquare,
   ScrollText,
   User2,
 } from "lucide-react";
@@ -42,6 +43,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { title: "Авито", url: "/avito", icon: User2 },
+  { title: "Сообщения", url: "/messages", icon: MessageSquare },
   { title: "Сценарии", url: "#", icon: ScrollText },
   { title: "База знаний", url: "#", icon: BookText },
 ];
