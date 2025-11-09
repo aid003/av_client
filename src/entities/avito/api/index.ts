@@ -1,0 +1,2 @@
+export { getAvitoAccounts } from './getAccounts';
+

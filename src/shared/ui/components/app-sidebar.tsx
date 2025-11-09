@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -40,7 +41,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { title: "Аккаунты", url: "#", icon: User2 },
+  { title: "Авито", url: "/avito", icon: User2 },
   { title: "Сценарии", url: "#", icon: ScrollText },
   { title: "База знаний", url: "#", icon: BookText },
 ];
@@ -58,10 +59,10 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
