@@ -59,14 +59,14 @@ export function ChatHeader({ conversation }: ChatHeaderProps) {
 
   return (
     <>
-      <div className="p-4 flex items-center gap-3">
-        <Avatar className="size-10">
+      <div className="p-4 flex items-center gap-3 overflow-x-hidden">
+        <Avatar className="size-10 shrink-0">
           <AvatarFallback className="bg-primary/10 text-primary">
             {getInitials(conversation.user.name)}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-x-hidden">
           <div className="font-semibold truncate">
             {conversation.user?.name || "Без имени"}
           </div>
@@ -75,21 +75,21 @@ export function ChatHeader({ conversation }: ChatHeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 overflow-x-hidden">
           {conversation.account?.label && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs truncate">
               {conversation.account.label}
             </Badge>
           )}
           {conversation.user.lifecycleStage && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs truncate">
               {conversation.user.lifecycleStage}
             </Badge>
           )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
+              <Button variant="ghost" size="icon" className="size-8 shrink-0">
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>

@@ -76,15 +76,15 @@ export function MessageInput({
       )}
       
       {error && (
-        <div className="px-4 pt-2">
-          <Alert variant="destructive">
+        <div className="px-2 py-1.5">
+          <Alert variant="destructive" className="py-2">
             <AlertCircle className="size-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         </div>
       )}
 
-      <div className="p-4 flex items-end gap-2">
+      <div className="p-2 flex items-end gap-2">
         <Textarea
           value={text}
           onChange={(e) => {
@@ -93,14 +93,14 @@ export function MessageInput({
           }}
           onKeyDown={handleKeyDown}
           placeholder="Введите сообщение..."
-          className="min-h-[60px] max-h-[200px] resize-none"
+          className="min-h-[38px] max-h-[200px] resize-none text-sm"
           disabled={loading}
         />
         <Button
           onClick={onSend}
           disabled={!text.trim() || loading}
           size="icon"
-          className="shrink-0"
+          className="shrink-0 h-9 w-9"
         >
           <Send className="size-4" />
         </Button>

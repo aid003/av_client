@@ -1,7 +1,7 @@
 export interface AvitoAccount {
   id: string;
   companyUserId: string;
-  label: string;
+  label: string | null;
   scope: string;
   expiresAt: string;
   refreshExpiresAt: string;

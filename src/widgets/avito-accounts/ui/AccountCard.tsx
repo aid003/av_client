@@ -37,7 +37,8 @@ export function AccountCard({ account, onDelete }: AccountCardProps) {
   const progress = Math.max(0, Math.min(100, (remainingTime / totalTime) * 100));
 
   // Получаем инициалы из label
-  const getInitials = (label: string): string => {
+  const getInitials = (label: string | null): string => {
+    if (!label) return "??";
     const words = label.trim().split(/\s+/);
     if (words.length >= 2) {
       return (words[0][0] + words[1][0]).toUpperCase();
@@ -53,13 +54,15 @@ export function AccountCard({ account, onDelete }: AccountCardProps) {
       <CardHeader>
         <div className="flex items-center gap-3 min-w-0">
           <Avatar className="shrink-0">
-            <AvatarImage src="" alt={account.label} />
+            <AvatarImage src="" alt={account.label ?? "Аккаунт"} />
             <AvatarFallback className="bg-primary/10 text-primary">
               {getInitials(account.label)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{account.label}</CardTitle>
+            <CardTitle className="text-lg truncate">
+              {account.label ?? `Аккаунт ${account.companyUserId}`}
+            </CardTitle>
             <CardDescription className="truncate">
               ID: {account.companyUserId}
             </CardDescription>
@@ -68,7 +71,7 @@ export function AccountCard({ account, onDelete }: AccountCardProps) {
         <CardAction className="shrink-0">
           <DeleteAccountButton
             accountId={account.id}
-            accountLabel={account.label}
+            accountLabel={account.label ?? `Аккаунт ${account.companyUserId}`}
             onSuccess={onDelete}
           />
         </CardAction>

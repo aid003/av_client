@@ -29,7 +29,7 @@ export interface ChatBinding {
 export interface ConversationAccount {
   id: string;
   companyUserId: string;
-  label: string;
+  label: string | null;
 }
 
 // Объявление
@@ -80,7 +80,7 @@ export interface Marker {
 export interface Conversation {
   id: string;
   chatId: string;
-  lastSeenAt: string;
+  lastSeenAt: string | null;
   stageWeight: number;
   createdAt: string;
   updatedAt: string;
@@ -96,7 +96,7 @@ export interface Conversation {
 export interface ConversationDetails {
   id: string;
   chatId: string;
-  lastSeenAt: string;
+  lastSeenAt: string | null;
   stageWeight: number;
   createdAt: string;
   updatedAt: string;
@@ -131,11 +131,11 @@ export interface ConversationFilters {
 export interface AccountStats {
   accountId: string;
   companyUserId: string;
-  label: string;
+  label: string | null;
   totalChats: number;
   unreadChats: number;
   totalMessages: number;
-  lastActivity: string;
+  lastActivity: string | null;
 }
 
 // Общая статистика

@@ -58,7 +58,7 @@ export function MessageItem({
   return (
     <div
       className={cn(
-        "flex gap-2 mb-4 max-w-[80%] group",
+        "flex gap-2 mb-4 max-w-[85%]",
         isIncoming ? "justify-start" : "justify-end ml-auto"
       )}
     >
@@ -70,7 +70,7 @@ export function MessageItem({
         </Avatar>
       )}
 
-      <div className="flex flex-col gap-1 min-w-0 flex-1">
+      <div className="flex flex-col gap-1 min-w-0 flex-1 group">
         {/* Цитируемое сообщение */}
         {message.quote && (
           <div
@@ -91,7 +91,7 @@ export function MessageItem({
         {/* Основное сообщение */}
         <div
           className={cn(
-            "rounded-2xl px-4 py-2 min-w-0",
+            "rounded-2xl px-4 py-2 min-w-0 relative",
             isIncoming
               ? "bg-muted text-foreground rounded-tl-none"
               : "bg-primary text-primary-foreground rounded-tr-none",
@@ -110,10 +110,10 @@ export function MessageItem({
           )}
 
           {/* Время и статус */}
-          <div className="flex items-center gap-2 justify-between mt-1">
+          <div className="flex items-center justify-between mt-1 gap-2">
             <div
               className={cn(
-                "text-xs",
+                "text-xs flex-shrink-0",
                 isIncoming
                   ? "text-muted-foreground"
                   : "text-primary-foreground/70"
@@ -122,8 +122,39 @@ export function MessageItem({
               {formatTime(message.createdAt)}
             </div>
 
-            <div className="flex items-center gap-1">
-              {/* Кнопки действий */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {/* Кнопки действий - только для исходящих в правом нижнем углу */}
+              {!isIncoming && (!isDeleted || canDelete) && (
+                <>
+                  {!isDeleted && <QuoteButton message={message} />}
+                  {canDelete && (
+                    <DeleteMessageButton
+                      tenantId={tenantId!}
+                      accountId={accountId!}
+                      chatId={chatId!}
+                      messageId={message.id}
+                      onSuccess={onDelete}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* Статус прочитанности для исходящих */}
+              {!isIncoming && !isDeleted && (
+                <div className="flex-shrink-0">
+                  {message.isRead ? (
+                    <CheckCheck className="size-3 text-primary-foreground/70" />
+                  ) : (
+                    <Check className="size-3 text-primary-foreground/70" />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Кнопки действий для входящих - в правом нижнем углу */}
+          {isIncoming && (!isDeleted || canDelete) && (
+            <div className="absolute bottom-2 right-2 flex items-center gap-1">
               {!isDeleted && <QuoteButton message={message} />}
               {canDelete && (
                 <DeleteMessageButton
@@ -134,19 +165,8 @@ export function MessageItem({
                   onSuccess={onDelete}
                 />
               )}
-
-              {/* Статус прочитанности для исходящих */}
-              {!isIncoming && !isDeleted && (
-                <div>
-                  {message.isRead ? (
-                    <CheckCheck className="size-3 text-primary-foreground/70" />
-                  ) : (
-                    <Check className="size-3 text-primary-foreground/70" />
-                  )}
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

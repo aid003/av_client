@@ -27,7 +27,8 @@ export function ConversationItem({
     return trimmed.substring(0, 2).toUpperCase();
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "—";
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -54,7 +55,7 @@ export function ConversationItem({
     <div
       onClick={onClick}
       className={cn(
-        "flex gap-3 p-3 cursor-pointer hover:bg-accent transition-colors border-b min-w-0",
+        "flex gap-3 p-3 cursor-pointer hover:bg-accent transition-colors border-b min-w-0 overflow-x-hidden",
         isActive && "bg-accent"
       )}
     >
@@ -71,7 +72,7 @@ export function ConversationItem({
         </AvatarFallback>
       </Avatar>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 overflow-x-hidden">
         <div className="flex items-start justify-between gap-2 mb-1">
           <div
             className={cn(

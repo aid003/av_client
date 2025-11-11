@@ -19,11 +19,11 @@ export function ChatList() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Диалоги</h2>
+      <div className="flex flex-col h-full overflow-x-hidden max-w-full">
+        <div className="p-4 border-b overflow-x-hidden">
+          <h2 className="text-lg font-semibold truncate">Диалоги</h2>
         </div>
-        <div className="p-4">
+        <div className="p-4 overflow-x-hidden">
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertDescription>{error}</AlertDescription>
@@ -34,14 +34,14 @@ export function ChatList() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-x-hidden max-w-full">
       <ChatListHeader
         filters={filters}
         onSearchChange={(value) => updateFilter("search", value)}
         totalConversations={total}
       />
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-x-hidden max-w-full">
         {loading && conversations.length === 0 ? (
           <ChatListLoader />
         ) : conversations.length === 0 ? (

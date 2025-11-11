@@ -29,9 +29,9 @@ export function DeleteMessageButton({
       disabled={loading}
       size="sm"
       variant="ghost"
-      className="size-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+      className="size-7 p-0 opacity-0 group-hover:opacity-100 transition-all text-destructive hover:text-destructive hover:bg-destructive/10 backdrop-blur-sm"
     >
-      <Trash2 className="size-3" />
+      <Trash2 className="size-4" />
     </Button>
   );
 }

@@ -11,9 +11,9 @@ interface QuotePreviewProps {
 
 export function QuotePreview({ quotedMessage, onClear }: QuotePreviewProps) {
   return (
-    <div className="px-4 py-2 bg-muted border-l-2 border-l-primary flex items-start gap-2">
+    <div className="px-2 py-1 bg-muted border-l-2 border-l-primary flex items-start gap-2">
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium text-muted-foreground mb-1">
+        <div className="text-xs font-medium text-muted-foreground">
           Ответ на сообщение
         </div>
         <div className="text-sm truncate">
@@ -24,9 +24,9 @@ export function QuotePreview({ quotedMessage, onClear }: QuotePreviewProps) {
         onClick={onClear}
         size="sm"
         variant="ghost"
-        className="size-6 p-0 shrink-0"
+        className="size-5 p-0 shrink-0"
       >
-        <X className="size-4" />
+        <X className="size-3" />
       </Button>
     </div>
   );

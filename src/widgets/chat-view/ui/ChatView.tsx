@@ -33,9 +33,9 @@ export function ChatView() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-x-hidden max-w-full">
         {conversation && <ChatHeader conversation={conversation} />}
-        <div className="p-4">
+        <div className="p-4 overflow-x-hidden">
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertDescription>{error}</AlertDescription>
@@ -47,7 +47,7 @@ export function ChatView() {
 
   if (loading && messages.length === 0) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-x-hidden max-w-full">
         {conversation && <ChatHeader conversation={conversation} />}
         <MessagesLoader />
       </div>
@@ -60,51 +60,51 @@ export function ChatView() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-x-hidden max-w-full">
       {conversation && <ChatHeader conversation={conversation} />}
 
-      <div className="flex-1 flex flex-col min-h-0">
-        {hasMore && (
-          <div className="p-2 flex justify-center border-b">
-            <Button
-              onClick={loadMore}
-              disabled={loading}
-              variant="ghost"
-              size="sm"
-            >
-              {loading ? "Загрузка..." : "Загрузить предыдущие"}
-            </Button>
-          </div>
-        )}
+      {hasMore && (
+        <div className="p-2 flex justify-center border-b shrink-0">
+          <Button
+            onClick={loadMore}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+          >
+            {loading ? "Загрузка..." : "Загрузить предыдущие"}
+          </Button>
+        </div>
+      )}
 
-        <MessageList
-          messages={messages}
-          userName={conversation?.user.name}
-          tenantId={authData?.tenant?.id}
-          accountId={conversation?.account?.id}
-          chatId={conversation?.chatId}
-          onMessageDelete={refetch}
-        />
+      <MessageList
+        messages={messages}
+        userName={conversation?.user.name}
+        tenantId={authData?.tenant?.id}
+        accountId={conversation?.account?.id}
+        chatId={conversation?.chatId}
+        onMessageDelete={refetch}
+      />
 
-        {conversation && authData?.tenant?.id && conversation.unreadCount > 0 && (
-          <div className="p-2 flex justify-center border-t">
-            <MarkAsReadButton
-              tenantId={authData.tenant.id}
-              conversationId={conversation.id}
-              unreadCount={conversation.unreadCount}
-              onSuccess={handleMarkAsRead}
-            />
-          </div>
-        )}
-      </div>
+      {conversation && authData?.tenant?.id && conversation.unreadCount > 0 && (
+        <div className="p-2 flex justify-center border-t shrink-0">
+          <MarkAsReadButton
+            tenantId={authData.tenant.id}
+            conversationId={conversation.id}
+            unreadCount={conversation.unreadCount}
+            onSuccess={handleMarkAsRead}
+          />
+        </div>
+      )}
 
       {conversation && authData?.tenant?.id && conversation.account?.id && (
-        <MessageInput
-          tenantId={authData.tenant.id}
-          accountId={conversation.account.id}
-          chatId={conversation.chatId}
-          onMessageSent={refetch}
-        />
+        <div className="shrink-0">
+          <MessageInput
+            tenantId={authData.tenant.id}
+            accountId={conversation.account.id}
+            chatId={conversation.chatId}
+            onMessageSent={refetch}
+          />
+        </div>
       )}
     </div>
   );

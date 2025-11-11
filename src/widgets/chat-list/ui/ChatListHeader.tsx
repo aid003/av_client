@@ -15,7 +15,7 @@ export function ChatListHeader({
   totalConversations,
 }: ChatListHeaderProps) {
   return (
-    <div className="p-4 border-b space-y-3">
+    <div className="p-4 border-b space-y-3 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Диалоги</h2>
         <div className="text-sm text-muted-foreground">

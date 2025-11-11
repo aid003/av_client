@@ -22,8 +22,8 @@ export function MessageList({
   onMessageDelete,
 }: MessageListProps) {
   return (
-    <ScrollArea className="flex-1 px-4">
-      <div className="py-4">
+    <ScrollArea className="flex-1 min-h-0 overflow-x-hidden max-w-full">
+      <div className="px-4 py-4 overflow-x-hidden max-w-full">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Нет сообщений

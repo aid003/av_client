@@ -17,9 +17,9 @@ export function QuoteButton({ message }: QuoteButtonProps) {
       onClick={() => setQuotedMessage(message)}
       size="sm"
       variant="ghost"
-      className="size-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+      className="size-7 p-0 opacity-0 group-hover:opacity-100 transition-all hover:bg-background/90 backdrop-blur-sm"
     >
-      <Reply className="size-3" />
+      <Reply className="size-4" />
     </Button>
   );
 }

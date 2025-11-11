@@ -11,6 +11,16 @@ export async function sendMessage(
   accountId: string,
   request: SendMessageRequest
 ): Promise<SendMessageResponse> {
+  // Удаляем undefined поля из запроса
+  const cleanRequest: Record<string, unknown> = {
+    chatId: request.chatId,
+    text: request.text,
+  };
+
+  if (request.quotedMessageId) {
+    cleanRequest.quotedMessageId = request.quotedMessageId;
+  }
+
   const response = await fetch(
     `${API_BASE_URL}/messenger/${tenantId}/accounts/${accountId}/messages`,
     {
@@ -18,7 +28,7 @@ export async function sendMessage(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify(cleanRequest),
     }
   );
 
