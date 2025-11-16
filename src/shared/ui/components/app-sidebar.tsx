@@ -41,12 +41,7 @@ type NavItem = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
 
-const navItems: NavItem[] = [
-  { title: "Авито", url: "/avito", icon: User2 },
-  { title: "Сообщения", url: "/messages", icon: MessageSquare },
-  { title: "Сценарии", url: "#", icon: ScrollText },
-  { title: "База знаний", url: "#", icon: BookText },
-];
+const navItems: NavItem[] = [{ title: "Аккаунты", url: "/avito", icon: User2 }];
 
 export function AppSidebar() {
   return (
@@ -92,10 +87,10 @@ function ProfileFooter() {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const { mode, setMode } = useThemeStore();
 
-  const firstName = authData?.user.first_name ?? "";
-  const lastName = authData?.user.last_name ?? "";
+  const firstName = authData?.user.firstName ?? "";
+  const lastName = authData?.user.lastName ?? "";
   const username = authData?.user.username;
-  const photoUrl = authData?.user.photo_url;
+  const photoUrl = authData?.user.photoUrl;
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ") || "Пользователь";
 
@@ -103,10 +98,11 @@ function ProfileFooter() {
     const handleClick = (e: MouseEvent) => {
       if (!containerRef.current) return;
       const target = e.target as Node;
-      
-      // Проверяем, не клик ли это по Select portal (который рендерится вне контейнера)
-      const isSelectClick = (target as Element).closest('[data-slot="select-content"]');
-      
+
+      const isSelectClick = (target as Element).closest(
+        '[data-slot="select-content"]'
+      );
+
       if (!containerRef.current.contains(target) && !isSelectClick) {
         setOpen(false);
       }
@@ -169,7 +165,10 @@ function ProfileFooter() {
               <label className="text-sidebar-foreground text-xs font-medium mb-1.5 block">
                 Тема
               </label>
-              <Select value={mode} onValueChange={(value) => setMode(value as ThemeMode)}>
+              <Select
+                value={mode}
+                onValueChange={(value) => setMode(value as ThemeMode)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>

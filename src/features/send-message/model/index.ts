@@ -1,2 +1,0 @@
-export { useSendMessage } from "./useSendMessage";
-

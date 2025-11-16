@@ -1,2 +1,0 @@
-export { DeleteMessageButton } from "./DeleteMessageButton";
-

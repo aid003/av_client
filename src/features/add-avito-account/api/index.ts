@@ -1,2 +1,0 @@
-export { generateAuthUrl } from "./generateAuthUrl";
-

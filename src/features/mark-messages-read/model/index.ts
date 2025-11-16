@@ -1,2 +1,0 @@
-export { useMarkAsRead } from "./useMarkAsRead";
-

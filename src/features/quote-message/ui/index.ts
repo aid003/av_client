@@ -1,2 +1,0 @@
-export { QuoteButton } from "./QuoteButton";
-

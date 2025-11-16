@@ -2,15 +2,15 @@ export interface TelegramAuthResponse {
   tenant: {
     id: string;
     name: string;
-    slug: string;
   };
   user: {
-    id: number;
-    first_name: string;
-    last_name?: string;
+    id: string;
+    telegramId: string;
+    firstName: string;
+    lastName?: string;
     username?: string;
-    language_code?: string;
-    photo_url?: string;
+    photoUrl?: string;
+    languageCode?: string;
   };
 }
 
@@ -20,6 +20,9 @@ export interface TelegramAuthRequest {
 
 export interface TelegramAuthError {
   message: string;
-  code: 'INVALID_INIT_DATA' | 'INVALID_SIGNATURE' | 'INTERNAL_ERROR' | 'USER_BLOCKED';
+  code?: string;
+  error?: string;
+  reason?: string;
+  statusCode?: number;
 }
 

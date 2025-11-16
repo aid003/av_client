@@ -1,2 +1,0 @@
-export { AvitoAccountsList } from "./ui";
-

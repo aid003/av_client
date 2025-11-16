@@ -17,10 +17,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       return;
     }
 
-    // Определяем итоговую тему
     const effectiveTheme = mode === 'auto' ? telegramColorScheme : mode;
     
-    // Применяем класс к document.documentElement
     if (effectiveTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

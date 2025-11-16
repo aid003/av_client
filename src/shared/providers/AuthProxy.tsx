@@ -14,7 +14,8 @@ interface AuthProxyProps {
 export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
   const { isInitialized, initData } = useTelegram();
   const setAuthData = useAuthStore((state) => state.setAuthData);
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const setAuthenticating = useAuthStore((state) => state.setAuthenticating);
+  const authData = useAuthStore((state) => state.authData);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -26,19 +27,22 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
 
     async function authenticate() {
       try {
+        setAuthenticating(true);
+
         if (!initData) {
-          setError('Отсутствуют initData. Откройте приложение через Telegram Mini App.');
-          return; // Не разблокируем контент, показываем ошибку
+          setError('Откройте приложение через Telegram');
+          setAuthenticating(false);
+          return;
         }
 
         const response = await authenticateTelegram(initData);
-        
-        // Сохраняем данные в Zustand store (который сам персистит в localStorage)
+
         setAuthData(response);
       } catch (err) {
         if (err instanceof UserBlockedError) {
           setBlockedReason(err.reason);
           setError(null);
+          setAuthenticating(false);
           return;
         }
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка';
@@ -47,13 +51,14 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
           console.error('Auth error:', errorMessage);
         }
         setError(errorMessage);
-      } finally {
-        setIsAuthenticating(false);
+        setAuthenticating(false);
       }
     }
 
     authenticate();
-  }, [isInitialized, initData, retryCount]);
+  }, [isInitialized, initData, retryCount, setAuthData, setAuthenticating]);
+
+  const isAuthenticating = useAuthStore((state) => state.isAuthenticating);
 
   if (isAuthenticating) {
     return (
@@ -94,7 +99,7 @@ export function AuthProxy({ children, loadingComponent }: AuthProxyProps) {
             className="px-4 py-2 rounded-md bg-black text-white dark:bg-white dark:text-black"
             onClick={() => {
               setError(null);
-              setIsAuthenticating(true);
+              setAuthenticating(true);
               setRetryCount((c) => c + 1);
             }}
           >

@@ -1,24 +1,37 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { init, initData, retrieveLaunchParams, themeParams } from '@tma.js/sdk-react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  init,
+  initData,
+  retrieveLaunchParams,
+  themeParams,
+} from "@tma.js/sdk-react";
 
 interface TelegramContextValue {
   isInitialized: boolean;
   initData: string | null;
-  colorScheme: 'light' | 'dark';
+  colorScheme: "light" | "dark";
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
   isInitialized: false,
   initData: null,
-  colorScheme: 'dark',
+  colorScheme: "dark",
 });
 
 export function useTelegram() {
   const context = useContext(TelegramContext);
   if (!context) {
-    throw new Error('useTelegram должен использоваться внутри TelegramProvider');
+    throw new Error(
+      "useTelegram должен использоваться внутри TelegramProvider"
+    );
   }
   return context;
 }
@@ -30,62 +43,70 @@ interface TelegramProviderProps {
 export function TelegramProvider({ children }: TelegramProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [rawInitData, setRawInitData] = useState<string | null>(null);
-  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('dark');
+  const [colorScheme, setColorScheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     try {
       // ВАЖНО: Инициализируем весь SDK
       init();
-      
+
       // Восстанавливаем состояние initData
       initData.restore();
-      
+
       // Получаем raw строку initData основным способом
       const raw = initData.raw();
       // Резервный способ через retrieveLaunchParams (по документации)
       const lp = retrieveLaunchParams();
       const fallbackRaw = lp.initDataRaw;
 
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // Минимальная информация в dev
         // eslint-disable-next-line no-console
-        console.log('SDK initialized, initData present:', Boolean(raw ?? fallbackRaw));
+        console.log(
+          "SDK initialized, initData present:",
+          Boolean(raw ?? fallbackRaw)
+        );
       }
 
-      const effectiveRaw = raw ?? (typeof fallbackRaw === 'string' ? fallbackRaw : null);
+      const effectiveRaw =
+        raw ?? (typeof fallbackRaw === "string" ? fallbackRaw : null);
       if (effectiveRaw) {
         setRawInitData(effectiveRaw);
       } else {
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === "development") {
           // eslint-disable-next-line no-console
-          console.warn('initData is empty');
+          console.warn("initData is empty");
         }
       }
-      
+
       // Получаем тему из Telegram
       try {
         // Проверяем isDark или используем fallback
-        const isDark = themeParams.isDark ?? lp.themeParams?.isDark ?? true;
-        const scheme = isDark ? 'dark' : 'light';
+        // @ts-ignore - themeParams type from Telegram SDK is incomplete
+        const isDark = themeParams?.isDark?.() ?? lp.themeParams?.isDark ?? true;
+        const scheme = isDark ? "dark" : "light";
         setColorScheme(scheme);
-        
-        if (process.env.NODE_ENV === 'development') {
+
+        if (process.env.NODE_ENV === "development") {
           // eslint-disable-next-line no-console
-          console.log('Telegram colorScheme:', scheme);
+          console.log("Telegram colorScheme:", scheme);
         }
       } catch (themeError) {
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === "development") {
           // eslint-disable-next-line no-console
-          console.warn('Failed to get theme, using dark as default:', themeError);
+          console.warn(
+            "Failed to get theme, using dark as default:",
+            themeError
+          );
         }
-        setColorScheme('dark');
+        setColorScheme("dark");
       }
-      
+
       setIsInitialized(true);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // eslint-disable-next-line no-console
-        console.error('SDK init error:', error);
+        console.error("SDK init error:", error);
       }
       setIsInitialized(true);
     }
@@ -99,49 +120,56 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
     try {
       // Проверяем, есть ли метод addEventListener у themeParams
-      if (typeof themeParams === 'object' && themeParams !== null) {
+      if (typeof themeParams === "object" && themeParams !== null) {
         const handleThemeChange = () => {
           try {
-            const newScheme = themeParams.colorScheme() ?? 'dark';
+            const newScheme = (themeParams as any).colorScheme?.() ?? "dark";
             setColorScheme(newScheme);
-            
-            if (process.env.NODE_ENV === 'development') {
+
+            if (process.env.NODE_ENV === "development") {
               // eslint-disable-next-line no-console
-              console.log('Telegram theme changed to:', newScheme);
+              console.log("Telegram theme changed to:", newScheme);
             }
           } catch (err) {
-            if (process.env.NODE_ENV === 'development') {
+            if (process.env.NODE_ENV === "development") {
               // eslint-disable-next-line no-console
-              console.error('Failed to get updated colorScheme:', err);
+              console.error("Failed to get updated colorScheme:", err);
             }
           }
         };
 
         // Пробуем разные API для подписки
-        if ('on' in themeParams && typeof themeParams.on === 'function') {
-          const cleanup = themeParams.on('change', handleThemeChange);
+        if ("on" in themeParams && typeof themeParams.on === "function") {
+          const cleanup = themeParams.on("change", handleThemeChange);
           return cleanup;
-        } else if ('addEventListener' in themeParams && typeof themeParams.addEventListener === 'function') {
-          themeParams.addEventListener('change', handleThemeChange);
+        } else if (
+          "addEventListener" in themeParams &&
+          typeof themeParams.addEventListener === "function"
+        ) {
+          themeParams.addEventListener("change", handleThemeChange);
           return () => {
-            if ('removeEventListener' in themeParams && typeof themeParams.removeEventListener === 'function') {
-              themeParams.removeEventListener('change', handleThemeChange);
+            if (
+              "removeEventListener" in themeParams &&
+              typeof themeParams.removeEventListener === "function"
+            ) {
+              themeParams.removeEventListener("change", handleThemeChange);
             }
           };
         }
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         // eslint-disable-next-line no-console
-        console.warn('Theme change subscription not available:', error);
+        console.warn("Theme change subscription not available:", error);
       }
     }
   }, [isInitialized]);
 
   return (
-    <TelegramContext.Provider value={{ isInitialized, initData: rawInitData, colorScheme }}>
+    <TelegramContext.Provider
+      value={{ isInitialized, initData: rawInitData, colorScheme }}
+    >
       {children}
     </TelegramContext.Provider>
   );
 }
-
