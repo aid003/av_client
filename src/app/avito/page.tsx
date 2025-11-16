@@ -1,15 +1,36 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
+import { AvitoAccountsList } from '@/widgets/avito-accounts-list';
+import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 
 export default function AvitoPage() {
   const { authData, isLoading, isAuthenticated } = useTelegramAuth();
+  const searchParams = useSearchParams();
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  useEffect(() => {
+    // Проверяем, вернулся ли пользователь после успешной авторизации
+    // Бэкенд перенаправляет на returnUrl с параметром startapp=success
+    const startapp = searchParams.get('startapp');
+    if (startapp === 'success') {
+      setShowSuccessMessage(true);
+      // Очищаем URL параметры
+      window.history.replaceState({}, '', '/avito');
+      // Скрываем сообщение через 5 секунд
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+    }
+  }, [searchParams]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4" />
           <p>Загрузка...</p>
         </div>
       </div>
@@ -27,25 +48,21 @@ export default function AvitoPage() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Аккаунты</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-        <div className="mb-4">
-          <h2 className="text-lg font-medium mb-2">Информация о пользователе</h2>
-          <div className="space-y-2">
-            <p><strong>Имя:</strong> {authData.user.firstName} {authData.user.lastName || ''}</p>
-            <p><strong>Telegram ID:</strong> {authData.user.telegramId}</p>
-            {authData.user.username && <p><strong>Username:</strong> @{authData.user.username}</p>}
-          </div>
+    <div className="container mx-auto p-6 max-w-7xl">
+      {showSuccessMessage && (
+        <div className="mb-6">
+          <Alert
+            variant="default"
+            className="border-green-500 bg-green-50 dark:bg-green-900/20"
+          >
+            <AlertDescription>
+              Аккаунт успешно добавлен!
+            </AlertDescription>
+          </Alert>
         </div>
-        <div>
-          <h2 className="text-lg font-medium mb-2">Информация о тенанте</h2>
-          <div className="space-y-2">
-            <p><strong>ID тенанта:</strong> {authData.tenant.id}</p>
-            <p><strong>Название:</strong> {authData.tenant.name}</p>
-          </div>
-        </div>
-      </div>
+      )}
+
+      <AvitoAccountsList tenantId={authData.tenant.id} />
     </div>
   );
 }

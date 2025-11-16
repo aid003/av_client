@@ -1,0 +1,166 @@
+'use client';
+
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '@/shared/ui/components/ui/button';
+import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/components/ui/dialog';
+import { Input } from '@/shared/ui/components/ui/input';
+import { Label } from '@/shared/ui/components/ui/label';
+import { getAuthorizeUrl } from '@/shared/lib/api';
+
+interface AddAccountButtonProps {
+  tenantId: string;
+  variant?: 'default' | 'outline' | 'secondary';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  className?: string;
+}
+
+export function AddAccountButton({
+  tenantId,
+  variant = 'default',
+  size = 'default',
+  className,
+}: AddAccountButtonProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [accountLabel, setAccountLabel] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenDialog = () => {
+    setAccountLabel('');
+    setError(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    if (!isLoading) {
+      setIsDialogOpen(false);
+      setAccountLabel('');
+      setError(null);
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (!accountLabel.trim()) {
+      setError('Пожалуйста, введите название аккаунта');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Формируем URL для возврата в мини-приложение Telegram
+      const returnUrl = 'https://t.me/av_client_bot?startapp=success';
+      const scopes = 'messenger:read,messenger:write,user:read,items:info';
+
+      const response = await getAuthorizeUrl({
+        tenantId,
+        scopes,
+        returnUrl,
+        label: accountLabel.trim(),
+      });
+
+      // Закрываем модальное окно
+      setIsDialogOpen(false);
+      setAccountLabel('');
+
+      // Открываем ссылку во внешнем браузере (не в мини-приложении)
+      // Проверяем наличие Telegram WebApp API
+      if (
+        typeof window !== 'undefined' &&
+        window.Telegram &&
+        window.Telegram.WebApp &&
+        window.Telegram.WebApp.openLink
+      ) {
+        // Используем Telegram WebApp API для открытия во внешнем браузере
+        window.Telegram.WebApp.openLink(response.authorizationUrl);
+      } else {
+        // Fallback: открываем в новой вкладке
+        window.open(response.authorizationUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Ошибка при получении ссылки авторизации'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        onClick={handleOpenDialog}
+        disabled={isLoading}
+        variant={variant}
+        size={size}
+        className={className}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Добавить аккаунт
+      </Button>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Добавить аккаунт Avito</DialogTitle>
+            <DialogDescription>
+              Введите название для нового аккаунта. Это поможет вам легко
+              идентифицировать его в списке.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="account-label">Название аккаунта</Label>
+              <Input
+                id="account-label"
+                placeholder="Например: Основной аккаунт"
+                value={accountLabel}
+                onChange={(e) => setAccountLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isLoading && accountLabel.trim()) {
+                    handleAddAccount();
+                  }
+                }}
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCloseDialog}
+              disabled={isLoading}
+            >
+              Отмена
+            </Button>
+            <Button onClick={handleAddAccount} disabled={isLoading || !accountLabel.trim()}>
+              {isLoading ? 'Загрузка...' : 'Продолжить'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
