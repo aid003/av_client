@@ -44,6 +44,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { title: "Аккаунты", url: "/avito", icon: User2 },
   { title: "Объявления", url: "/ads", icon: ScrollText },
+  { title: "Чаты", url: "/chats", icon: MessageSquare },
 ];
 
 export function AppSidebar() {

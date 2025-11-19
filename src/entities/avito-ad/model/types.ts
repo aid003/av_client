@@ -18,7 +18,7 @@ export interface AvitoAd {
   category: AvitoAdCategory;
   price: string;
   address: string;
-  status: 'ACTIVE' | 'REMOVED' | 'OLD' | 'BLOCKED' | 'REJECTED';
+  status: 'ACTIVE' | 'REMOVED' | 'OLD' | 'BLOCKED' | 'REJECTED' | 'NOT_FOUND' | 'ANOTHER_USER';
   url: string;
   startTime: string | null;
   finishTime: string | null;
