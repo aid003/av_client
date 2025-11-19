@@ -4,19 +4,23 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
 import { AvitoAccountsList } from '@/widgets/avito-accounts-list';
+import { useAvitoAccountsStore } from '@/shared/lib/store';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 
 export default function AvitoPage() {
   const { authData, isLoading, isAuthenticated } = useTelegramAuth();
   const searchParams = useSearchParams();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const { loadAccounts } = useAvitoAccountsStore();
 
   useEffect(() => {
     // Проверяем, вернулся ли пользователь после успешной авторизации
     // Бэкенд перенаправляет на returnUrl с параметром startapp=success
     const startapp = searchParams.get('startapp');
-    if (startapp === 'success') {
+    if (startapp === 'success' && authData?.tenant?.id) {
       setShowSuccessMessage(true);
+      // Перезагружаем аккаунты из стора
+      loadAccounts(authData.tenant.id);
       // Очищаем URL параметры
       window.history.replaceState({}, '', '/avito');
       // Скрываем сообщение через 5 секунд
@@ -24,7 +28,7 @@ export default function AvitoPage() {
         setShowSuccessMessage(false);
       }, 5000);
     }
-  }, [searchParams]);
+  }, [searchParams, authData, loadAccounts]);
 
   if (isLoading) {
     return (

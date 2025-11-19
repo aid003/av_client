@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AvitoAccountCard, type AvitoAccount } from '@/entities/avito-account';
+import { useEffect } from 'react';
+import { AvitoAccountCard } from '@/entities/avito-account';
 import { AddAccountButton } from '@/features/add-avito-account';
-import { getAvitoAccounts } from '@/shared/lib/api';
+import { useAvitoAccountsStore } from '@/shared/lib/store';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/shared/ui/components/ui/card';
@@ -17,32 +17,23 @@ export function AvitoAccountsList({
   tenantId,
   onAccountChange,
 }: AvitoAccountsListProps) {
-  const [accounts, setAccounts] = useState<AvitoAccount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    accountsByTenant,
+    loadingByTenant,
+    errorsByTenant,
+    loadAccounts,
+  } = useAvitoAccountsStore();
 
-  const loadAccounts = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await getAvitoAccounts(tenantId);
-      setAccounts(data);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Ошибка при загрузке аккаунтов'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const accounts = accountsByTenant[tenantId] || [];
+  const isLoading = loadingByTenant[tenantId] ?? true;
+  const error = errorsByTenant[tenantId] ?? null;
 
   useEffect(() => {
-    loadAccounts();
-  }, [tenantId]);
+    loadAccounts(tenantId);
+  }, [tenantId, loadAccounts]);
 
   const handleAccountDeleted = () => {
-    loadAccounts();
+    loadAccounts(tenantId);
     onAccountChange?.();
   };
 

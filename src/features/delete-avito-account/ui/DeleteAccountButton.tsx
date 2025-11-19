@@ -12,6 +12,7 @@ import {
 } from '@/shared/ui/components/ui/dialog';
 import { Button } from '@/shared/ui/components/ui/button';
 import { deleteAvitoAccount } from '@/shared/lib/api';
+import { useAvitoAccountsStore } from '@/shared/lib/store';
 import type { AvitoAccount } from '@/entities/avito-account';
 
 interface DeleteAccountButtonProps {
@@ -26,6 +27,7 @@ export function DeleteAccountButton({
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { removeAccount } = useAvitoAccountsStore();
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -33,6 +35,7 @@ export function DeleteAccountButton({
 
     try {
       await deleteAvitoAccount(account.id);
+      removeAccount(account.tenantId, account.id);
       setIsOpen(false);
       onSuccess();
     } catch (err) {

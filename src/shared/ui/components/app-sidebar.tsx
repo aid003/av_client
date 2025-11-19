@@ -41,7 +41,10 @@ type NavItem = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
 
-const navItems: NavItem[] = [{ title: "Аккаунты", url: "/avito", icon: User2 }];
+const navItems: NavItem[] = [
+  { title: "Аккаунты", url: "/avito", icon: User2 },
+  { title: "Объявления", url: "/ads", icon: ScrollText },
+];
 
 export function AppSidebar() {
   return (
