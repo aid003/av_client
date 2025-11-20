@@ -1,36 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
 import { AvitoChatsList } from '@/widgets/avito-chats-list';
 import { ChatView } from '@/widgets/avito-chat-view';
-import { Sheet, SheetContent } from '@/shared/ui/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/components/ui/sheet';
 import { useIsMobile } from '@/shared/hooks/use-mobile';
+import { useSidebar } from '@/shared/ui/components/ui/sidebar';
+import { useChatsStore } from '@/shared/lib/store';
 import type { Chat } from '@/entities/avito-chat';
 
 export default function ChatsPage() {
   const { authData, isLoading, isAuthenticated } = useTelegramAuth();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const isMobile = useIsMobile();
+  const { open, setOpen } = useSidebar();
+  const { chatsByTenant, getChat } = useChatsStore();
+  const hasClosedSidebarRef = useRef(false);
+
+  const tenantId = authData?.tenant.id;
+  
+  // Получаем актуальный чат из store
+  const selectedChat = selectedChatId && tenantId 
+    ? getChat(tenantId, selectedChatId) || null
+    : null;
 
   const handleChatSelect = (chat: Chat) => {
     setSelectedChatId(chat.id);
-    setSelectedChat(chat);
   };
 
   const handleCloseChat = () => {
     setSelectedChatId(null);
-    setSelectedChat(null);
   };
 
+  // Обновляем selectedChatId если чат был удален из store
   useEffect(() => {
+    if (selectedChatId && tenantId && !selectedChat) {
+      setSelectedChatId(null);
+    }
+  }, [selectedChatId, tenantId, selectedChat]);
+
+  // Закрываем сайдбар только один раз при монтировании, если он открыт
+  useEffect(() => {
+    if (!hasClosedSidebarRef.current) {
+      // Проверяем состояние и закрываем только если открыт
+      // Используем функцию setOpen, чтобы получить актуальное состояние
+      setOpen((currentOpen) => {
+        if (currentOpen) {
+          hasClosedSidebarRef.current = true;
+          return false;
+        }
+        return currentOpen;
+      });
+    }
+    
     // Сброс выбранного чата при размонтировании
     return () => {
       setSelectedChatId(null);
-      setSelectedChat(null);
+      hasClosedSidebarRef.current = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Запускаем только при монтировании
 
   if (isLoading) {
     return (
@@ -53,15 +83,13 @@ export default function ChatsPage() {
     );
   }
 
-  const tenantId = authData.tenant.id;
-
   // Мобильная версия: список или Sheet с чатом
   if (isMobile) {
     return (
       <>
-        <div className="h-screen flex flex-col">
+        <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
           {!selectedChatId && (
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4">
               <AvitoChatsList
                 tenantId={tenantId}
                 onChatSelect={handleChatSelect}
@@ -71,13 +99,16 @@ export default function ChatsPage() {
           )}
         </div>
         <Sheet open={!!selectedChatId} onOpenChange={(open) => !open && handleCloseChat()}>
-          <SheetContent side="right" className="w-full sm:w-full p-0">
+          <SheetContent side="right" className="w-full sm:w-full p-0 flex flex-col gap-0 h-full">
+            <SheetTitle className="sr-only">Чат</SheetTitle>
             {selectedChat && (
-              <ChatView
-                chat={selectedChat}
-                onBack={handleCloseChat}
-                showBackButton={true}
-              />
+              <div className="flex-1 flex flex-col min-h-0">
+                <ChatView
+                  chat={selectedChat}
+                  onBack={handleCloseChat}
+                  showBackButton={true}
+                />
+              </div>
             )}
           </SheetContent>
         </Sheet>
@@ -87,19 +118,24 @@ export default function ChatsPage() {
 
   // Десктопная версия: двухпанельный layout
   return (
-    <div className="h-screen flex">
-      <div className="w-full md:w-1/3 lg:w-1/4 border-r overflow-auto p-4">
-        <AvitoChatsList
-          tenantId={tenantId}
-          onChatSelect={handleChatSelect}
-          selectedChatId={selectedChatId || undefined}
-        />
+    <div className="h-[calc(100vh-3rem)] flex overflow-hidden">
+      {/* Левая панель со списком чатов */}
+      <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4">
+          <AvitoChatsList
+            tenantId={tenantId}
+            onChatSelect={handleChatSelect}
+            selectedChatId={selectedChatId || undefined}
+          />
+        </div>
       </div>
-      <div className="flex-1 overflow-hidden">
+      
+      {/* Правая панель с просмотром чата */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         {selectedChat ? (
           <ChatView chat={selectedChat} />
         ) : (
-          <div className="h-full flex items-center justify-center p-8">
+          <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-4">
               <h2 className="text-2xl font-semibold text-muted-foreground">
                 Выберите чат

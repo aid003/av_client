@@ -178,8 +178,16 @@ function renderMessageContent(message: Message) {
   }
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
-  const isOutgoing = message.isOutgoing;
+interface MessageBubbleWithContextProps extends MessageBubbleProps {
+  currentAuthorId?: string;
+}
+
+export function MessageBubble({ message, currentAuthorId }: MessageBubbleWithContextProps) {
+  // Определяем, является ли сообщение исходящим на основе authorId
+  // Если currentAuthorId не передан, используем isOutgoing как fallback
+  const isOutgoing = currentAuthorId 
+    ? message.authorId === currentAuthorId 
+    : message.isOutgoing;
 
   // Системные сообщения отображаем по-особому
   if (message.type === 'system') {

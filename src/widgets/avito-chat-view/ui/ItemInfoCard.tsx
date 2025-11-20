@@ -33,65 +33,67 @@ export function ItemInfoCard({
   const imageUrl = images?.main ? Object.values(images.main)[0] : null;
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex gap-4">
+    <Card className="overflow-hidden py-0">
+      <CardContent className="p-1.5">
+        <div className="flex gap-1.5">
           {/* Изображение товара */}
-          <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-12 h-12 shrink-0 rounded overflow-hidden bg-muted">
             {imageUrl && !imageError ? (
               <Image
                 src={imageUrl}
                 alt={title}
                 fill
                 className="object-cover"
-                sizes="96px"
+                sizes="48px"
                 onError={() => setImageError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                <ImageIcon className="w-3 h-3 text-muted-foreground" />
               </div>
             )}
           </div>
 
           {/* Информация о товаре */}
-          <div className="flex-1 min-w-0 flex flex-col gap-2">
-            <div>
-              <h3 className="font-semibold text-base line-clamp-2 mb-1">
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-xs line-clamp-1 leading-tight">
                 {title}
               </h3>
               {price_string && (
-                <p className="text-xl font-bold text-primary">
+                <p className="font-bold text-xs text-primary leading-tight">
                   {price_string}
                 </p>
               )}
             </div>
 
-            {location?.title && (
-              <Badge variant="secondary" className="text-xs w-fit">
-                <MapPin className="w-3 h-3 mr-1" />
-                {location.title}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1 flex-wrap">
+              {location?.title && (
+                <Badge variant="secondary" className="text-xs w-fit h-5 px-1.5">
+                  <MapPin className="w-2.5 h-2.5 mr-1" />
+                  {location.title}
+                </Badge>
+              )}
 
-            {url && (
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-                className="w-full sm:w-auto"
-              >
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 justify-center"
+              {url && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="h-6 text-xs px-2"
                 >
-                  <ExternalLink className="h-4 w-4" />
-                  Открыть на Avito
-                </a>
-              </Button>
-            )}
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Открыть на Avito
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

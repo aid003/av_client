@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { ChatListItem } from '@/entities/avito-chat';
-import { getChats } from '@/shared/lib/api';
+import { useChatsStore } from '@/shared/lib/store';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
@@ -15,27 +15,59 @@ interface AvitoChatsListProps {
   selectedChatId?: string;
 }
 
+// Интервал обновления в миллисекундах (30 секунд)
+const POLLING_INTERVAL = 30000;
+
 export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: AvitoChatsListProps) {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    chatsByTenant,
+    loadingByTenant,
+    errorsByTenant,
+    loadChats,
+    refreshChats,
+  } = useChatsStore();
 
-  const loadChats = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const chats = await getChats(tenantId);
-      setChats(chats);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при загрузке чатов');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const chats = chatsByTenant[tenantId] || [];
+  const isLoading = loadingByTenant[tenantId] ?? true;
+  const error = errorsByTenant[tenantId] || null;
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Загрузка чатов при монтировании
   useEffect(() => {
-    loadChats();
-  }, [tenantId]);
+    loadChats(tenantId);
+  }, [tenantId, loadChats]);
+
+  // Polling для автоматического обновления
+  useEffect(() => {
+    // Очищаем предыдущий интервал
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    // Устанавливаем новый интервал
+    pollingIntervalRef.current = setInterval(() => {
+      refreshChats(tenantId);
+    }, POLLING_INTERVAL);
+
+    // Очистка при размонтировании
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [tenantId, refreshChats]);
+
+  // Обновление при фокусе страницы
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshChats(tenantId);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [tenantId, refreshChats]);
 
   if (isLoading) {
     return (

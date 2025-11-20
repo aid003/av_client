@@ -40,10 +40,38 @@ function getMessagePreview(content?: LastMessageContent): { text: string; icon?:
   return { text: 'Сообщение' };
 }
 
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
+function formatRelativeTime(dateString: string | undefined): string {
+  if (!dateString) {
+    return '—';
+  }
+
+  // Пробуем разные форматы даты
+  let date: Date;
+  
+  // Если это Unix timestamp (число в строке)
+  if (/^\d+$/.test(dateString)) {
+    const timestamp = parseInt(dateString, 10);
+    // Если это секунды, а не миллисекунды
+    date = timestamp < 10000000000 
+      ? new Date(timestamp * 1000) 
+      : new Date(timestamp);
+  } else {
+    date = new Date(dateString);
+  }
+
+  // Проверяем валидность даты
+  if (isNaN(date.getTime())) {
+    return '—';
+  }
+
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
+  
+  // Если дата в будущем, показываем "только что"
+  if (diffMs < 0) {
+    return 'только что';
+  }
+
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
@@ -60,10 +88,15 @@ function formatRelativeTime(dateString: string): string {
   if (diffDays < 7) {
     return `${diffDays} дн`;
   }
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-  });
+  
+  try {
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+    });
+  } catch {
+    return '—';
+  }
 }
 
 function getParticipantInitials(name: string): string {
@@ -99,7 +132,7 @@ export function ChatListItem({ chat, onClick }: ChatListItemProps) {
             <div className="flex items-center justify-between gap-1.5">
               <h3 className="font-semibold text-sm truncate">{otherParticipant?.name || 'Без имени'}</h3>
               <span className="text-[11px] text-muted-foreground shrink-0">
-                {formatRelativeTime(chat.updatedAt)}
+                {formatRelativeTime(chat.updatedAt || chat.createdAt)}
               </span>
             </div>
 
