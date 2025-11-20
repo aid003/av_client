@@ -5,7 +5,7 @@ import type { ChatsResponse, MessagesResponse } from '@/entities/avito-chat';
  * Получить список чатов Avito для тенанта
  */
 export async function getChats(tenantId: string): Promise<ChatsResponse> {
-  const url = `${config.apiBaseUrl}/api/avito-messenger/chats/tenant/${tenantId}`;
+  const url = `${config.apiBaseUrl}/api/avito-messenger/chats/${tenantId}`;
 
   const response = await fetch(url, {
     method: 'GET',
@@ -20,7 +20,7 @@ export async function getChats(tenantId: string): Promise<ChatsResponse> {
     if (response.status === 404) {
       // Если endpoint не найден или тенант не найден, возвращаем пустой список
       // Это может означать, что API еще не реализован или у тенанта нет чатов
-      return { data: [], total: 0 };
+      return [];
     }
     throw new Error(`Ошибка при загрузке чатов: ${response.status}`);
   }
@@ -32,7 +32,7 @@ export async function getChats(tenantId: string): Promise<ChatsResponse> {
  * Получить сообщения чата
  */
 export async function getMessages(chatId: string): Promise<MessagesResponse> {
-  const url = `${config.apiBaseUrl}/api/avito-messenger/chats/${chatId}/messages`;
+  const url = `${config.apiBaseUrl}/api/avito-messenger/messages/${chatId}`;
 
   const response = await fetch(url, {
     method: 'GET',

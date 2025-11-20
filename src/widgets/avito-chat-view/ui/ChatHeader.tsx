@@ -17,7 +17,7 @@ function getParticipantInitials(name: string): string {
 }
 
 export function ChatHeader({ chat, onBack, showBackButton = false }: ChatHeaderProps) {
-  const otherParticipant = chat.participants.find((p) => p.id !== chat.avitoAccountId) || chat.participants[0];
+  const otherParticipant = chat.participants.find((p) => p.id.toString() !== chat.avitoAccountId) || chat.participants[0];
 
   return (
     <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
@@ -33,20 +33,23 @@ export function ChatHeader({ chat, onBack, showBackButton = false }: ChatHeaderP
       )}
 
       <Avatar className="h-10 w-10 shrink-0">
-        {otherParticipant.avatar ? (
-          <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
+        {otherParticipant?.public_user_profile?.avatar?.default ? (
+          <AvatarImage
+            src={otherParticipant.public_user_profile.avatar.default}
+            alt={otherParticipant.name}
+          />
         ) : null}
-        <AvatarFallback>{getParticipantInitials(otherParticipant.name)}</AvatarFallback>
+        <AvatarFallback>{getParticipantInitials(otherParticipant?.name || 'U')}</AvatarFallback>
       </Avatar>
 
       <div className="flex-1 min-w-0">
-        <h2 className="font-semibold text-base truncate">{otherParticipant.name}</h2>
-        {chat.type === 'u2i' && (
+        <h2 className="font-semibold text-base truncate">{otherParticipant?.name || 'Без имени'}</h2>
+        {chat.chatType === 'u2i' && (
           <p className="text-xs text-muted-foreground">Чат по объявлению</p>
         )}
       </div>
 
-      {otherParticipant.profileUrl && (
+      {otherParticipant?.public_user_profile?.url && (
         <Button
           variant="ghost"
           size="icon"
@@ -54,7 +57,7 @@ export function ChatHeader({ chat, onBack, showBackButton = false }: ChatHeaderP
           className="shrink-0"
         >
           <a
-            href={otherParticipant.profileUrl}
+            href={otherParticipant.public_user_profile.url}
             target="_blank"
             rel="noopener noreferrer"
             title="Открыть профиль"

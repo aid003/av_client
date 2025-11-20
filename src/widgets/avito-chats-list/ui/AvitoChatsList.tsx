@@ -24,8 +24,8 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getChats(tenantId);
-      setChats(response.data || []);
+      const chats = await getChats(tenantId);
+      setChats(chats);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при загрузке чатов');
     } finally {
@@ -41,18 +41,18 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="flex flex-col gap-2 max-w-2xl">
+          {[1, 2, 3, 4, 5].map((i) => (
             <Card key={i}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-2/3" />
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
                 </div>
+                <Skeleton className="h-3 w-full" />
               </CardContent>
             </Card>
           ))}
@@ -108,7 +108,7 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-col gap-2 max-w-2xl">
         {chats.map((chat) => (
           <div
             key={chat.id}
