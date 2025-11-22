@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { Chat, Message } from './types';
 import { getChats, getMessages } from '../api';
 import { ERROR_MESSAGES } from '@/shared/lib/error-messages';
@@ -242,11 +243,15 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
  * Используйте эти хуки вместо прямого обращения к store
  */
 
+// Пустые массивы для использования как fallback (чтобы не создавать новые на каждый рендер)
+const EMPTY_CHATS: Chat[] = [];
+const EMPTY_MESSAGES: Message[] = [];
+
 /**
  * Получить чаты для конкретного тенанта
  */
 export const useChatsForTenant = (tenantId: string) =>
-  useChatsStore((state) => state.chatsByTenant[tenantId] || []);
+  useChatsStore((state) => state.chatsByTenant[tenantId] ?? EMPTY_CHATS);
 
 /**
  * Получить статус загрузки чатов для конкретного тенанта
@@ -264,7 +269,7 @@ export const useChatsError = (tenantId: string) =>
  * Получить сообщения для конкретного чата
  */
 export const useMessagesForChat = (chatId: string) =>
-  useChatsStore((state) => state.messagesByChatId[chatId] || []);
+  useChatsStore((state) => state.messagesByChatId[chatId] ?? EMPTY_MESSAGES);
 
 /**
  * Получить статус загрузки сообщений для конкретного чата
@@ -282,21 +287,25 @@ export const useMessagesError = (chatId: string) =>
  * Получить actions для чатов (не вызывают ре-рендер)
  */
 export const useChatsActions = () =>
-  useChatsStore((state) => ({
-    loadChats: state.loadChats,
-    refreshChats: state.refreshChats,
-    setChats: state.setChats,
-    clearChats: state.clearChats,
-  }));
+  useChatsStore(
+    useShallow((state) => ({
+      loadChats: state.loadChats,
+      refreshChats: state.refreshChats,
+      setChats: state.setChats,
+      clearChats: state.clearChats,
+    }))
+  );
 
 /**
  * Получить actions для сообщений (не вызывают ре-рендер)
  */
 export const useMessagesActions = () =>
-  useChatsStore((state) => ({
-    loadMessages: state.loadMessages,
-    refreshMessages: state.refreshMessages,
-    setMessages: state.setMessages,
-    addMessage: state.addMessage,
-    clearMessages: state.clearMessages,
-  }));
+  useChatsStore(
+    useShallow((state) => ({
+      loadMessages: state.loadMessages,
+      refreshMessages: state.refreshMessages,
+      setMessages: state.setMessages,
+      addMessage: state.addMessage,
+      clearMessages: state.clearMessages,
+    }))
+  );

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { AvitoAccount } from './types';
 import { getAvitoAccounts } from '../api';
 import { ERROR_MESSAGES } from '@/shared/lib/error-messages';
@@ -128,11 +129,14 @@ export const useAvitoAccountsStore = create<AvitoAccountsState>()((set, get) => 
  * Используйте эти хуки вместо прямого обращения к store
  */
 
+// Пустой массив для использования как fallback (чтобы не создавать новый на каждый рендер)
+const EMPTY_ACCOUNTS: AvitoAccount[] = [];
+
 /**
  * Получить аккаунты для конкретного тенанта
  */
 export const useAccountsForTenant = (tenantId: string) =>
-  useAvitoAccountsStore((state) => state.accountsByTenant[tenantId] || []);
+  useAvitoAccountsStore((state) => state.accountsByTenant[tenantId] ?? EMPTY_ACCOUNTS);
 
 /**
  * Получить статус загрузки для конкретного тенанта
@@ -150,12 +154,14 @@ export const useAccountsError = (tenantId: string) =>
  * Получить actions (не вызывают ре-рендер)
  */
 export const useAccountsActions = () =>
-  useAvitoAccountsStore((state) => ({
-    loadAccounts: state.loadAccounts,
-    setAccounts: state.setAccounts,
-    addAccount: state.addAccount,
-    removeAccount: state.removeAccount,
-    clearAccounts: state.clearAccounts,
-    setLoading: state.setLoading,
-    setError: state.setError,
-  }));
+  useAvitoAccountsStore(
+    useShallow((state) => ({
+      loadAccounts: state.loadAccounts,
+      setAccounts: state.setAccounts,
+      addAccount: state.addAccount,
+      removeAccount: state.removeAccount,
+      clearAccounts: state.clearAccounts,
+      setLoading: state.setLoading,
+      setError: state.setError,
+    }))
+  );
