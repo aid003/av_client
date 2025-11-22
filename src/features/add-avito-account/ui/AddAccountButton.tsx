@@ -14,7 +14,7 @@ import {
 } from '@/shared/ui/components/ui/dialog';
 import { Input } from '@/shared/ui/components/ui/input';
 import { Label } from '@/shared/ui/components/ui/label';
-import { getAuthorizeUrl } from '@/shared/lib/api';
+import { getAuthorizeUrl } from '@/entities/avito-account';
 
 interface AddAccountButtonProps {
   tenantId: string;

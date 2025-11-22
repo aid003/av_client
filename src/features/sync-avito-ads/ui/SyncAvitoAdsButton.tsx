@@ -11,8 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/components/ui/dialog';
-import { syncAvitoAds } from '@/shared/lib/api';
-import type { AvitoAdsSyncResponse } from '@/entities/avito-ad';
+import { syncAvitoAds, type AvitoAdsSyncResponse } from '@/entities/avito-ad';
 
 interface SyncAvitoAdsButtonProps {
   tenantId: string;

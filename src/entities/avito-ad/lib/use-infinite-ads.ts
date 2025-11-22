@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { getAvitoAds } from '@/shared/lib/api';
-import type { AvitoAd, AvitoAdsPaginationMeta } from '@/entities/avito-ad';
+import { getAvitoAds } from '../api';
+import type { AvitoAd, AvitoAdsPaginationMeta } from '../model/types';
 
 interface UseInfiniteAdsOptions {
   perPage?: number;
@@ -48,7 +48,9 @@ export function useInfiniteAds(
       setMeta(response.meta);
       setCurrentPage(1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при загрузке объявлений');
+      setError(
+        err instanceof Error ? err.message : 'Ошибка при загрузке объявлений'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -68,11 +70,13 @@ export function useInfiniteAds(
         status: 'ACTIVE',
       });
 
-      setAds(prev => [...prev, ...response.data]);
+      setAds((prev) => [...prev, ...response.data]);
       setMeta(response.meta);
       setCurrentPage(nextPage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при загрузке объявлений');
+      setError(
+        err instanceof Error ? err.message : 'Ошибка при загрузке объявлений'
+      );
     } finally {
       setIsLoadingMore(false);
     }

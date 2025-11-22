@@ -1,3 +1,4 @@
+// Types
 export type {
   AvitoAd,
   AvitoAdCategory,
@@ -8,4 +9,11 @@ export type {
   GetAvitoAdsParams,
 } from './model/types';
 
+// API
+export { getAvitoAds, syncAvitoAds } from './api';
+
+// Hooks
+export { useInfiniteAds } from './lib';
+
+// UI
 export { AvitoAdCard } from './ui/AvitoAdCard';

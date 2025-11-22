@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AvitoAccountCard } from '@/entities/avito-account';
+import { AvitoAccountCard, useAvitoAccountsStore } from '@/entities/avito-account';
 import { AddAccountButton } from '@/features/add-avito-account';
-import { useAvitoAccountsStore } from '@/shared/lib/store';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/shared/ui/components/ui/card';

@@ -7,8 +7,8 @@ import {
   getWebhookStatus,
   registerWebhook,
   unsubscribeWebhook,
-} from '@/shared/lib/api';
-import type { AvitoAccount } from '@/entities/avito-account';
+  type AvitoAccount,
+} from '@/entities/avito-account';
 
 interface WebhookSubscriptionButtonProps {
   account: AvitoAccount;

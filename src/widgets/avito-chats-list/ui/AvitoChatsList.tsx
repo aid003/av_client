@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { ChatListItem } from '@/entities/avito-chat';
-import { useChatsStore } from '@/shared/lib/store';
+import { ChatListItem, useChatsStore, type Chat } from '@/entities/avito-chat';
+import { usePolling } from '@/shared/lib/use-polling';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
-import type { Chat } from '@/entities/avito-chat';
 
 interface AvitoChatsListProps {
   tenantId: string;
@@ -15,22 +14,25 @@ interface AvitoChatsListProps {
   selectedChatId?: string;
 }
 
-// Интервал обновления в миллисекундах (30 секунд)
-const POLLING_INTERVAL = 30000;
+// Интервал обновления в миллисекундах (15 секунд)
+const POLLING_INTERVAL = 15000;
 
-export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: AvitoChatsListProps) {
+export function AvitoChatsList({
+  tenantId,
+  onChatSelect,
+  selectedChatId,
+}: AvitoChatsListProps) {
   const {
     chatsByTenant,
-    loadingByTenant,
-    errorsByTenant,
+    loadingChatsByTenant,
+    errorsChatsByTenant,
     loadChats,
     refreshChats,
   } = useChatsStore();
 
   const chats = chatsByTenant[tenantId] || [];
-  const isLoading = loadingByTenant[tenantId] ?? true;
-  const error = errorsByTenant[tenantId] || null;
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoading = loadingChatsByTenant[tenantId] ?? true;
+  const error = errorsChatsByTenant[tenantId] ?? null;
 
   // Загрузка чатов при монтировании
   useEffect(() => {
@@ -38,36 +40,14 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
   }, [tenantId, loadChats]);
 
   // Polling для автоматического обновления
-  useEffect(() => {
-    // Очищаем предыдущий интервал
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+  usePolling(
+    () => refreshChats(tenantId),
+    {
+      interval: POLLING_INTERVAL,
+      refreshOnFocus: true,
+      enabled: !isLoading,
     }
-
-    // Устанавливаем новый интервал
-    pollingIntervalRef.current = setInterval(() => {
-      refreshChats(tenantId);
-    }, POLLING_INTERVAL);
-
-    // Очистка при размонтировании
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [tenantId, refreshChats]);
-
-  // Обновление при фокусе страницы
-  useEffect(() => {
-    const handleFocus = () => {
-      refreshChats(tenantId);
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [tenantId, refreshChats]);
+  );
 
   if (isLoading) {
     return (
@@ -109,7 +89,9 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Чаты</h1>
-          <p className="text-muted-foreground">Сообщения от покупателей на Avito</p>
+          <p className="text-muted-foreground">
+            Сообщения от покупателей на Avito
+          </p>
         </div>
 
         <div className="flex items-center justify-center min-h-[400px]">
@@ -136,7 +118,12 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
       <div>
         <h2 className="text-2xl font-semibold">Чаты</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Показано {chats.length} {chats.length === 1 ? 'чат' : chats.length < 5 ? 'чата' : 'чатов'}
+          Показано {chats.length}{' '}
+          {chats.length === 1
+            ? 'чат'
+            : chats.length < 5
+              ? 'чата'
+              : 'чатов'}
         </p>
       </div>
 
@@ -144,12 +131,11 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
         {chats.map((chat) => (
           <div
             key={chat.id}
-            className={selectedChatId === chat.id ? 'ring-2 ring-primary rounded-xl' : ''}
+            className={
+              selectedChatId === chat.id ? 'ring-2 ring-primary rounded-xl' : ''
+            }
           >
-            <ChatListItem
-              chat={chat}
-              onClick={() => onChatSelect?.(chat)}
-            />
+            <ChatListItem chat={chat} onClick={() => onChatSelect?.(chat)} />
           </div>
         ))}
       </div>
@@ -162,4 +148,3 @@ export function AvitoChatsList({ tenantId, onChatSelect, selectedChatId }: Avito
     </div>
   );
 }
-

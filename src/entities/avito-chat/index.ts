@@ -1,3 +1,4 @@
+// Types
 export type {
   Chat,
   ChatType,
@@ -20,4 +21,11 @@ export type {
   VoiceContent,
 } from './model/types';
 
+// API
+export { getChats, getMessages } from './api';
+
+// Store
+export { useChatsStore } from './model/store';
+
+// UI
 export { ChatListItem } from './ui/ChatListItem';

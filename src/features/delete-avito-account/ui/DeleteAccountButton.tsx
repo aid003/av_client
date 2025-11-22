@@ -11,9 +11,11 @@ import {
   DialogTitle,
 } from '@/shared/ui/components/ui/dialog';
 import { Button } from '@/shared/ui/components/ui/button';
-import { deleteAvitoAccount } from '@/shared/lib/api';
-import { useAvitoAccountsStore } from '@/shared/lib/store';
-import type { AvitoAccount } from '@/entities/avito-account';
+import {
+  deleteAvitoAccount,
+  useAvitoAccountsStore,
+  type AvitoAccount,
+} from '@/entities/avito-account';
 
 interface DeleteAccountButtonProps {
   account: AvitoAccount;

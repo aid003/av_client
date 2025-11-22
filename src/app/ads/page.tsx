@@ -1,6 +1,6 @@
 'use client';
 
-import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
+import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { AvitoAdsList } from '@/widgets/avito-ads-list';
 
 export default function AdsPage() {

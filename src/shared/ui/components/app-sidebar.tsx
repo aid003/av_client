@@ -25,7 +25,7 @@ import {
   ScrollText,
   User2,
 } from "lucide-react";
-import { useTelegramAuth } from "@/shared/hooks/useTelegramAuth";
+import { useTelegramAuth } from "@/shared/lib/use-telegram-auth";
 import { useThemeStore, type ThemeMode } from "@/shared/lib/store";
 import {
   Select,

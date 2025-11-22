@@ -2,15 +2,14 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import { AlertCircle, MessageSquare } from 'lucide-react';
-import { useChatsStore } from '@/shared/lib/store';
+import { useChatsStore, type Chat, type Message } from '@/entities/avito-chat';
+import { usePolling } from '@/shared/lib/use-polling';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { ItemInfoCard } from './ItemInfoCard';
-import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
-import { ScrollArea } from '@/shared/ui/components/ui/scroll-area';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
-import type { Chat } from '@/entities/avito-chat';
+import { ScrollArea } from '@/shared/ui/components/ui/scroll-area';
 
 interface ChatViewProps {
   chat: Chat;
@@ -21,22 +20,26 @@ interface ChatViewProps {
 // Интервал обновления сообщений в миллисекундах (15 секунд)
 const MESSAGES_POLLING_INTERVAL = 15000;
 
-export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps) {
+export function ChatView({
+  chat,
+  onBack,
+  showBackButton = false,
+}: ChatViewProps) {
   const {
-    messagesByChat,
-    loadingMessagesByChat,
-    errorsMessagesByChat,
+    messagesByChatId,
+    loadingMessagesByChatId,
+    errorsMessagesByChatId,
     loadMessages,
     refreshMessages,
   } = useChatsStore();
 
-  const messages = messagesByChat[chat.id] || [];
-  const isLoading = loadingMessagesByChat[chat.id] ?? true;
-  const error = errorsMessagesByChat[chat.id] || null;
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const messages = messagesByChatId[chat.id] || [];
+  const isLoading = loadingMessagesByChatId[chat.id] ?? true;
+  const error = errorsMessagesByChatId[chat.id] ?? null;
 
-  // Загрузка сообщений при монтировании
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Загрузка сообщений при монтировании или изменении chat.id
   useEffect(() => {
     if (chat.id) {
       loadMessages(chat.id);
@@ -44,43 +47,17 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
   }, [chat.id, loadMessages]);
 
   // Polling для автоматического обновления сообщений
-  useEffect(() => {
-    if (!chat.id) return;
-
-    // Очищаем предыдущий интервал
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+  usePolling(
+    () => refreshMessages(chat.id),
+    {
+      interval: MESSAGES_POLLING_INTERVAL,
+      refreshOnFocus: true,
+      enabled: !!chat.id && !isLoading,
     }
+  );
 
-    // Устанавливаем новый интервал
-    pollingIntervalRef.current = setInterval(() => {
-      refreshMessages(chat.id);
-    }, MESSAGES_POLLING_INTERVAL);
-
-    // Очистка при размонтировании
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [chat.id, refreshMessages]);
-
-  // Обновление при фокусе страницы
+  // Автоскролл вниз при загрузке сообщений
   useEffect(() => {
-    if (!chat.id) return;
-
-    const handleFocus = () => {
-      refreshMessages(chat.id);
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [chat.id, refreshMessages]);
-
-  useEffect(() => {
-    // Автоскролл вниз при загрузке сообщений
     if (!isLoading && messagesEndRef.current) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,28 +69,25 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
   const itemInfo = chat.context?.type === 'item' ? chat.context.value : null;
 
   // Определяем authorId текущего пользователя (владельца аккаунта)
-  // Логика: если authorId === userId в сообщении, то это сообщение от владельца аккаунта
   const currentUserAuthorId = useMemo(() => {
     // Ищем сообщение где authorId совпадает с userId
-    // Это означает, что сообщение от владельца аккаунта (продавца)
     const ownerMessage = messages.find(
       (m) => m.authorId === m.userId && m.userId
     );
-    
+
     if (ownerMessage) {
       return ownerMessage.authorId;
     }
-    
+
     // Fallback: пытаемся найти по участникам чата
-    // avitoAccountId может быть связан с participant.id
     const accountParticipant = chat.participants.find(
       (p) => p.id.toString() === chat.avitoAccountId
     );
-    
+
     if (accountParticipant) {
       return accountParticipant.id.toString();
     }
-    
+
     // Последний fallback: используем isOutgoing если есть
     const outgoingMessage = messages.find((m) => m.isOutgoing);
     return outgoingMessage?.authorId;
@@ -122,7 +96,11 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
   return (
     <div className="flex flex-col h-full bg-background min-h-0">
       {/* Заголовок чата */}
-      <ChatHeader chat={chat} onBack={onBack} showBackButton={showBackButton} />
+      <ChatHeader
+        chat={chat}
+        onBack={onBack}
+        showBackButton={showBackButton}
+      />
 
       {/* Карточка товара (для u2i чатов) */}
       {chat.chatType === 'u2i' && itemInfo && (
@@ -161,7 +139,9 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
                     <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Ошибка загрузки</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Ошибка загрузки
+                    </h3>
                     <p className="text-sm text-muted-foreground">{error}</p>
                   </div>
                 </CardContent>
@@ -176,7 +156,9 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
                     <MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Нет сообщений</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Нет сообщений
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Сообщения в этом чате появятся здесь
                     </p>
@@ -188,9 +170,9 @@ export function ChatView({ chat, onBack, showBackButton = false }: ChatViewProps
             // Сообщения
             <div className="space-y-3">
               {messages.map((message) => (
-                <MessageBubble 
-                  key={message.id} 
-                  message={message} 
+                <MessageBubble
+                  key={message.id}
+                  message={message}
                   currentAuthorId={currentUserAuthorId}
                 />
               ))}

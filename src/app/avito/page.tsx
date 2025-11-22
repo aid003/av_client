@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
+import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { AvitoAccountsList } from '@/widgets/avito-accounts-list';
-import { useAvitoAccountsStore } from '@/shared/lib/store';
+import { useAvitoAccountsStore } from '@/entities/avito-account';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 
 export default function AvitoPage() {

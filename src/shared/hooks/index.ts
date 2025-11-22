@@ -1,2 +1,2 @@
-export { useTelegramAuth } from './useTelegramAuth';
+export { useIsMobile } from './use-mobile';
 

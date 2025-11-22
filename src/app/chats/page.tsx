@@ -1,62 +1,41 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useTelegramAuth } from '@/shared/hooks/useTelegramAuth';
+import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { AvitoChatsList } from '@/widgets/avito-chats-list';
 import { ChatView } from '@/widgets/avito-chat-view';
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/components/ui/sheet';
 import { useIsMobile } from '@/shared/hooks/use-mobile';
 import { useSidebar } from '@/shared/ui/components/ui/sidebar';
-import { useChatsStore } from '@/shared/lib/store';
 import type { Chat } from '@/entities/avito-chat';
 
 export default function ChatsPage() {
   const { authData, isLoading, isAuthenticated } = useTelegramAuth();
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const isMobile = useIsMobile();
   const { open, setOpen } = useSidebar();
-  const { chatsByTenant, getChat } = useChatsStore();
   const hasClosedSidebarRef = useRef(false);
 
   const tenantId = authData?.tenant.id;
-  
-  // Получаем актуальный чат из store
-  const selectedChat = selectedChatId && tenantId 
-    ? getChat(tenantId, selectedChatId) || null
-    : null;
 
   const handleChatSelect = (chat: Chat) => {
-    setSelectedChatId(chat.id);
+    setSelectedChat(chat);
   };
 
   const handleCloseChat = () => {
-    setSelectedChatId(null);
+    setSelectedChat(null);
   };
 
-  // Обновляем selectedChatId если чат был удален из store
+  // Закрываем сайдбар только один раз при монтировании
   useEffect(() => {
-    if (selectedChatId && tenantId && !selectedChat) {
-      setSelectedChatId(null);
+    if (!hasClosedSidebarRef.current && open) {
+      setOpen(false);
+      hasClosedSidebarRef.current = true;
     }
-  }, [selectedChatId, tenantId, selectedChat]);
 
-  // Закрываем сайдбар только один раз при монтировании, если он открыт
-  useEffect(() => {
-    if (!hasClosedSidebarRef.current) {
-      // Проверяем состояние и закрываем только если открыт
-      // Используем функцию setOpen, чтобы получить актуальное состояние
-      setOpen((currentOpen) => {
-        if (currentOpen) {
-          hasClosedSidebarRef.current = true;
-          return false;
-        }
-        return currentOpen;
-      });
-    }
-    
     // Сброс выбранного чата при размонтировании
     return () => {
-      setSelectedChatId(null);
+      setSelectedChat(null);
       hasClosedSidebarRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,17 +67,17 @@ export default function ChatsPage() {
     return (
       <>
         <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
-          {!selectedChatId && (
+          {!selectedChat && (
             <div className="flex-1 overflow-y-auto p-4">
               <AvitoChatsList
-                tenantId={tenantId}
+                tenantId={tenantId!}
                 onChatSelect={handleChatSelect}
-                selectedChatId={selectedChatId || undefined}
+                selectedChatId={undefined}
               />
             </div>
           )}
         </div>
-        <Sheet open={!!selectedChatId} onOpenChange={(open) => !open && handleCloseChat()}>
+        <Sheet open={!!selectedChat} onOpenChange={(open) => !open && handleCloseChat()}>
           <SheetContent side="right" className="w-full sm:w-full p-0 flex flex-col gap-0 h-full">
             <SheetTitle className="sr-only">Чат</SheetTitle>
             {selectedChat && (
@@ -123,13 +102,13 @@ export default function ChatsPage() {
       <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4">
           <AvitoChatsList
-            tenantId={tenantId}
+            tenantId={tenantId!}
             onChatSelect={handleChatSelect}
-            selectedChatId={selectedChatId || undefined}
+            selectedChatId={selectedChat?.id}
           />
         </div>
       </div>
-      
+
       {/* Правая панель с просмотром чата */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedChat ? (

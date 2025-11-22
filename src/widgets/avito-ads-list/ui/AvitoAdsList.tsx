@@ -2,9 +2,8 @@
 
 import { useEffect } from 'react';
 import { Package } from 'lucide-react';
-import { AvitoAdCard } from '@/entities/avito-ad';
+import { AvitoAdCard, useInfiniteAds } from '@/entities/avito-ad';
 import { SyncAvitoAdsButton } from '@/features/sync-avito-ads';
-import { useInfiniteAds } from '@/shared/hooks/useInfiniteAds';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
