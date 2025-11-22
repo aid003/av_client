@@ -13,6 +13,5 @@ export function useTelegramAuth() {
     isLoading: isAuthenticating,
     isAuthenticated: !!authData,
     tenantId: authData?.tenant?.id,
-    isBlocked: false, // Not in response, always false
   };
 }

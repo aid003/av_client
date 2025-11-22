@@ -2,7 +2,13 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import { AlertCircle, MessageSquare } from 'lucide-react';
-import { useChatsStore, type Chat, type Message } from '@/entities/avito-chat';
+import {
+  useMessagesForChat,
+  useMessagesLoading,
+  useMessagesError,
+  useMessagesActions,
+  type Chat,
+} from '@/entities/avito-chat';
 import { usePolling } from '@/shared/lib/use-polling';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
@@ -25,17 +31,10 @@ export function ChatView({
   onBack,
   showBackButton = false,
 }: ChatViewProps) {
-  const {
-    messagesByChatId,
-    loadingMessagesByChatId,
-    errorsMessagesByChatId,
-    loadMessages,
-    refreshMessages,
-  } = useChatsStore();
-
-  const messages = messagesByChatId[chat.id] || [];
-  const isLoading = loadingMessagesByChatId[chat.id] ?? true;
-  const error = errorsMessagesByChatId[chat.id] ?? null;
+  const messages = useMessagesForChat(chat.id);
+  const isLoading = useMessagesLoading(chat.id);
+  const error = useMessagesError(chat.id);
+  const { loadMessages, refreshMessages } = useMessagesActions();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -58,10 +57,12 @@ export function ChatView({
 
   // Автоскролл вниз при загрузке сообщений
   useEffect(() => {
-    if (!isLoading && messagesEndRef.current) {
-      setTimeout(() => {
+    if (!isLoading && messages.length > 0 && messagesEndRef.current) {
+      const timer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [messages, isLoading]);
 

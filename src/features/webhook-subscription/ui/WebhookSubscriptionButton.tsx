@@ -58,10 +58,15 @@ export function WebhookSubscriptionButton({
 
   if (isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled className="w-full">
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        Загрузка...
-      </Button>
+      <div className="space-y-2">
+        <Button variant="outline" size="sm" disabled className="w-full">
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Загрузка...
+        </Button>
+        {error && (
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        )}
+      </div>
     );
   }
 

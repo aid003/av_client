@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Chat, Message } from './types';
 import { getChats, getMessages } from '../api';
+import { ERROR_MESSAGES } from '@/shared/lib/error-messages';
 
 interface ChatsState {
   // Чаты по tenantId
@@ -63,7 +64,7 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
       }));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Ошибка при загрузке чатов';
+        err instanceof Error ? err.message : ERROR_MESSAGES.LOAD_CHATS;
       set((state) => ({
         loadingChatsByTenant: {
           ...state.loadingChatsByTenant,
@@ -86,7 +87,7 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
       }));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Ошибка при обновлении чатов';
+        err instanceof Error ? err.message : ERROR_MESSAGES.LOAD_CHATS;
       set((state) => ({
         errorsChatsByTenant: {
           ...state.errorsChatsByTenant,
@@ -152,7 +153,7 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
       }));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Ошибка при загрузке сообщений';
+        err instanceof Error ? err.message : ERROR_MESSAGES.LOAD_MESSAGES;
       set((state) => ({
         loadingMessagesByChatId: {
           ...state.loadingMessagesByChatId,
@@ -178,7 +179,7 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
       }));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Ошибка при обновлении сообщений';
+        err instanceof Error ? err.message : ERROR_MESSAGES.LOAD_MESSAGES;
       set((state) => ({
         errorsMessagesByChatId: {
           ...state.errorsMessagesByChatId,
@@ -235,3 +236,67 @@ export const useChatsStore = create<ChatsState>()((set, get) => ({
     });
   },
 }));
+
+/**
+ * Custom селекторы для оптимизации производительности
+ * Используйте эти хуки вместо прямого обращения к store
+ */
+
+/**
+ * Получить чаты для конкретного тенанта
+ */
+export const useChatsForTenant = (tenantId: string) =>
+  useChatsStore((state) => state.chatsByTenant[tenantId] || []);
+
+/**
+ * Получить статус загрузки чатов для конкретного тенанта
+ */
+export const useChatsLoading = (tenantId: string) =>
+  useChatsStore((state) => state.loadingChatsByTenant[tenantId] ?? true);
+
+/**
+ * Получить ошибку чатов для конкретного тенанта
+ */
+export const useChatsError = (tenantId: string) =>
+  useChatsStore((state) => state.errorsChatsByTenant[tenantId] ?? null);
+
+/**
+ * Получить сообщения для конкретного чата
+ */
+export const useMessagesForChat = (chatId: string) =>
+  useChatsStore((state) => state.messagesByChatId[chatId] || []);
+
+/**
+ * Получить статус загрузки сообщений для конкретного чата
+ */
+export const useMessagesLoading = (chatId: string) =>
+  useChatsStore((state) => state.loadingMessagesByChatId[chatId] ?? true);
+
+/**
+ * Получить ошибку сообщений для конкретного чата
+ */
+export const useMessagesError = (chatId: string) =>
+  useChatsStore((state) => state.errorsMessagesByChatId[chatId] ?? null);
+
+/**
+ * Получить actions для чатов (не вызывают ре-рендер)
+ */
+export const useChatsActions = () =>
+  useChatsStore((state) => ({
+    loadChats: state.loadChats,
+    refreshChats: state.refreshChats,
+    setChats: state.setChats,
+    clearChats: state.clearChats,
+  }));
+
+/**
+ * Получить actions для сообщений (не вызывают ре-рендер)
+ */
+export const useMessagesActions = () =>
+  useChatsStore((state) => ({
+    loadMessages: state.loadMessages,
+    refreshMessages: state.refreshMessages,
+    setMessages: state.setMessages,
+    addMessage: state.addMessage,
+    clearMessages: state.clearMessages,
+  }));

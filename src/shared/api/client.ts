@@ -14,6 +14,8 @@ export class ApiError extends Error {
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string | number | boolean>;
+  timeout?: number;
+  retries?: number;
 }
 
 /**
@@ -21,9 +23,57 @@ interface RequestConfig extends RequestInit {
  */
 export class ApiClient {
   private baseUrl: string;
+  private defaultTimeout = 30000; // 30 секунд
+  private defaultRetries = 3;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Создает fetch с таймаутом
+   */
+  private async fetchWithTimeout(
+    url: string,
+    options: RequestInit,
+    timeout: number
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: options.signal || controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if ((error as Error).name === 'AbortError') {
+        throw new Error('Превышено время ожидания ответа от сервера');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Проверяет, можно ли повторить запрос при данной ошибке
+   */
+  private isRetryableError(error: unknown): boolean {
+    if (error instanceof ApiError) {
+      // Повторяем только для временных ошибок сервера
+      return error.status >= 500 && error.status < 600;
+    }
+    // Повторяем для сетевых ошибок
+    return true;
+  }
+
+  /**
+   * Задержка для retry с exponential backoff
+   */
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean>): string {
@@ -114,26 +164,54 @@ export class ApiClient {
   /**
    * GET запрос
    */
-  async get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T> {
+  async get<T>(
+    endpoint: string,
+    params?: Record<string, string | number | boolean>,
+    options?: RequestConfig
+  ): Promise<T> {
     const url = this.buildUrl(endpoint, params);
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const maxRetries = options?.retries ?? this.defaultRetries;
 
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
+    let lastError: unknown;
 
-      return await this.handleResponse<T>(response);
-    } catch (error) {
-      if (error instanceof ApiError) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.fetchWithTimeout(
+          url,
+          {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...options?.headers,
+            },
+            signal: options?.signal,
+          },
+          timeout
+        );
+
+        return await this.handleResponse<T>(response);
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof ApiError) {
+          throw error;
+        }
+
+        // Проверяем, нужно ли повторить запрос
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+          await this.sleep(delay);
+          continue;
+        }
+
         throw error;
       }
-      throw new Error('Сервер временно недоступен. Попробуйте позже');
     }
+
+    throw lastError || new Error('Сервер временно недоступен. Попробуйте позже');
   }
 
   /**
@@ -141,27 +219,48 @@ export class ApiClient {
    */
   async post<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const maxRetries = options?.retries ?? 0; // POST по умолчанию не повторяем
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options?.headers,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-        ...options,
-      });
+    let lastError: unknown;
 
-      return await this.handleResponse<T>(response);
-    } catch (error) {
-      if (error instanceof ApiError) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.fetchWithTimeout(
+          url,
+          {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...options?.headers,
+            },
+            body: data ? JSON.stringify(data) : undefined,
+            signal: options?.signal,
+          },
+          timeout
+        );
+
+        return await this.handleResponse<T>(response);
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof ApiError) {
+          throw error;
+        }
+
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await this.sleep(delay);
+          continue;
+        }
+
         throw error;
       }
-      throw new Error('Сервер временно недоступен. Попробуйте позже');
     }
+
+    throw lastError || new Error('Сервер временно недоступен. Попробуйте позже');
   }
 
   /**
@@ -169,27 +268,48 @@ export class ApiClient {
    */
   async put<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const maxRetries = options?.retries ?? 0;
 
-    try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options?.headers,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-        ...options,
-      });
+    let lastError: unknown;
 
-      return await this.handleResponse<T>(response);
-    } catch (error) {
-      if (error instanceof ApiError) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.fetchWithTimeout(
+          url,
+          {
+            method: 'PUT',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...options?.headers,
+            },
+            body: data ? JSON.stringify(data) : undefined,
+            signal: options?.signal,
+          },
+          timeout
+        );
+
+        return await this.handleResponse<T>(response);
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof ApiError) {
+          throw error;
+        }
+
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await this.sleep(delay);
+          continue;
+        }
+
         throw error;
       }
-      throw new Error('Сервер временно недоступен. Попробуйте позже');
     }
+
+    throw lastError || new Error('Сервер временно недоступен. Попробуйте позже');
   }
 
   /**
@@ -197,26 +317,47 @@ export class ApiClient {
    */
   async delete<T>(endpoint: string, options?: RequestConfig): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const maxRetries = options?.retries ?? 0;
 
-    try {
-      const response = await fetch(url, {
-        method: 'DELETE',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options?.headers,
-        },
-        ...options,
-      });
+    let lastError: unknown;
 
-      return await this.handleResponse<T>(response);
-    } catch (error) {
-      if (error instanceof ApiError) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.fetchWithTimeout(
+          url,
+          {
+            method: 'DELETE',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...options?.headers,
+            },
+            signal: options?.signal,
+          },
+          timeout
+        );
+
+        return await this.handleResponse<T>(response);
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof ApiError) {
+          throw error;
+        }
+
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await this.sleep(delay);
+          continue;
+        }
+
         throw error;
       }
-      throw new Error('Сервер временно недоступен. Попробуйте позже');
     }
+
+    throw lastError || new Error('Сервер временно недоступен. Попробуйте позже');
   }
 
   /**
@@ -224,27 +365,48 @@ export class ApiClient {
    */
   async patch<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const maxRetries = options?.retries ?? 0;
 
-    try {
-      const response = await fetch(url, {
-        method: 'PATCH',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options?.headers,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-        ...options,
-      });
+    let lastError: unknown;
 
-      return await this.handleResponse<T>(response);
-    } catch (error) {
-      if (error instanceof ApiError) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.fetchWithTimeout(
+          url,
+          {
+            method: 'PATCH',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...options?.headers,
+            },
+            body: data ? JSON.stringify(data) : undefined,
+            signal: options?.signal,
+          },
+          timeout
+        );
+
+        return await this.handleResponse<T>(response);
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof ApiError) {
+          throw error;
+        }
+
+        if (attempt < maxRetries && this.isRetryableError(error)) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await this.sleep(delay);
+          continue;
+        }
+
         throw error;
       }
-      throw new Error('Сервер временно недоступен. Попробуйте позже');
     }
+
+    throw lastError || new Error('Сервер временно недоступен. Попробуйте позже');
   }
 }
 

@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/api';
+import { apiClient, ApiError } from '@/shared/api';
 import { config } from '@/shared/lib/config';
 
 /**
@@ -26,7 +26,7 @@ export async function getWebhookStatus(
     );
   } catch (error) {
     // Если webhook не найден (404), возвращаем null
-    if (error instanceof Error && 'status' in error && (error as any).status === 404) {
+    if (error instanceof ApiError && error.status === 404) {
       return null;
     }
     throw error;

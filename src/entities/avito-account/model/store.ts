@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AvitoAccount } from './types';
 import { getAvitoAccounts } from '../api';
+import { ERROR_MESSAGES } from '@/shared/lib/error-messages';
 
 interface AvitoAccountsState {
   accountsByTenant: Record<string, AvitoAccount[]>;
@@ -42,7 +43,7 @@ export const useAvitoAccountsStore = create<AvitoAccountsState>()((set, get) => 
       }));
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Ошибка при загрузке аккаунтов';
+        err instanceof Error ? err.message : ERROR_MESSAGES.LOAD_ACCOUNTS;
       set((state) => ({
         loadingByTenant: { ...state.loadingByTenant, [tenantId]: false },
         errorsByTenant: { ...state.errorsByTenant, [tenantId]: errorMessage },
@@ -121,3 +122,40 @@ export const useAvitoAccountsStore = create<AvitoAccountsState>()((set, get) => 
     }));
   },
 }));
+
+/**
+ * Custom селекторы для оптимизации производительности
+ * Используйте эти хуки вместо прямого обращения к store
+ */
+
+/**
+ * Получить аккаунты для конкретного тенанта
+ */
+export const useAccountsForTenant = (tenantId: string) =>
+  useAvitoAccountsStore((state) => state.accountsByTenant[tenantId] || []);
+
+/**
+ * Получить статус загрузки для конкретного тенанта
+ */
+export const useAccountsLoading = (tenantId: string) =>
+  useAvitoAccountsStore((state) => state.loadingByTenant[tenantId] ?? true);
+
+/**
+ * Получить ошибку для конкретного тенанта
+ */
+export const useAccountsError = (tenantId: string) =>
+  useAvitoAccountsStore((state) => state.errorsByTenant[tenantId] ?? null);
+
+/**
+ * Получить actions (не вызывают ре-рендер)
+ */
+export const useAccountsActions = () =>
+  useAvitoAccountsStore((state) => ({
+    loadAccounts: state.loadAccounts,
+    setAccounts: state.setAccounts,
+    addAccount: state.addAccount,
+    removeAccount: state.removeAccount,
+    clearAccounts: state.clearAccounts,
+    setLoading: state.setLoading,
+    setError: state.setError,
+  }));

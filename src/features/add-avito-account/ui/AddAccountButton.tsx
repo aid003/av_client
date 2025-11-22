@@ -75,17 +75,29 @@ export function AddAccountButton({
 
       // Открываем ссылку во внешнем браузере (не в мини-приложении)
       // Проверяем наличие Telegram WebApp API
-      if (
-        typeof window !== 'undefined' &&
-        window.Telegram &&
-        window.Telegram.WebApp &&
-        window.Telegram.WebApp.openLink
-      ) {
-        // Используем Telegram WebApp API для открытия во внешнем браузере
-        window.Telegram.WebApp.openLink(response.authorizationUrl);
-      } else {
-        // Fallback: открываем в новой вкладке
-        window.open(response.authorizationUrl, '_blank', 'noopener,noreferrer');
+      try {
+        if (
+          typeof window !== 'undefined' &&
+          window.Telegram &&
+          window.Telegram.WebApp &&
+          window.Telegram.WebApp.openLink
+        ) {
+          // Используем Telegram WebApp API для открытия во внешнем браузере
+          window.Telegram.WebApp.openLink(response.authorizationUrl);
+        } else {
+          // Fallback: открываем в новой вкладке
+          const opened = window.open(response.authorizationUrl, '_blank', 'noopener,noreferrer');
+          if (!opened) {
+            throw new Error('Не удалось открыть окно авторизации. Проверьте настройки блокировки всплывающих окон.');
+          }
+        }
+      } catch (openError) {
+        setError(
+          openError instanceof Error
+            ? openError.message
+            : 'Не удалось открыть страницу авторизации'
+        );
+        setIsDialogOpen(true); // Открываем диалог обратно для показа ошибки
       }
     } catch (err) {
       setError(

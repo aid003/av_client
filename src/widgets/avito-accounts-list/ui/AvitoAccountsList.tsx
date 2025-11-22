@@ -1,31 +1,39 @@
 'use client';
 
-import { useEffect } from 'react';
-import { AvitoAccountCard, useAvitoAccountsStore } from '@/entities/avito-account';
+import { useEffect, memo } from 'react';
+import {
+  AvitoAccountCard,
+  useAccountsForTenant,
+  useAccountsLoading,
+  useAccountsError,
+  useAccountsActions,
+  type AvitoAccount,
+} from '@/entities/avito-account';
 import { AddAccountButton } from '@/features/add-avito-account';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/shared/ui/components/ui/card';
+import { EmptyState, EmptyStateIcons } from '@/shared/ui';
 
 interface AvitoAccountsListProps {
   tenantId: string;
   onAccountChange?: () => void;
 }
 
+// Мемоизированная карточка аккаунта
+const MemoizedAccountCard = memo<{
+  account: AvitoAccount;
+  onDeleteSuccess: () => void;
+}>(AvitoAccountCard);
+
 export function AvitoAccountsList({
   tenantId,
   onAccountChange,
 }: AvitoAccountsListProps) {
-  const {
-    accountsByTenant,
-    loadingByTenant,
-    errorsByTenant,
-    loadAccounts,
-  } = useAvitoAccountsStore();
-
-  const accounts = accountsByTenant[tenantId] || [];
-  const isLoading = loadingByTenant[tenantId] ?? true;
-  const error = errorsByTenant[tenantId] ?? null;
+  const accounts = useAccountsForTenant(tenantId);
+  const isLoading = useAccountsLoading(tenantId);
+  const error = useAccountsError(tenantId);
+  const { loadAccounts } = useAccountsActions();
 
   useEffect(() => {
     loadAccounts(tenantId);
@@ -84,36 +92,12 @@ export function AvitoAccountsList({
           </p>
         </div>
 
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="w-full max-w-md">
-            <CardContent className="pt-6 pb-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  У вас пока нет аккаунтов Avito
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Добавьте свой первый аккаунт, чтобы начать работу с Avito API
-                </p>
-              </div>
-              <AddAccountButton tenantId={tenantId} />
-            </CardContent>
-          </Card>
-        </div>
+        <EmptyState
+          icon={EmptyStateIcons.Plus}
+          title="У вас пока нет аккаунтов Avito"
+          description="Добавьте свой первый аккаунт, чтобы начать работу с Avito API"
+          action={<AddAccountButton tenantId={tenantId} />}
+        />
       </div>
     );
   }
@@ -128,7 +112,7 @@ export function AvitoAccountsList({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {accounts.map((account) => (
-          <AvitoAccountCard
+          <MemoizedAccountCard
             key={account.id}
             account={account}
             onDeleteSuccess={handleAccountDeleted}

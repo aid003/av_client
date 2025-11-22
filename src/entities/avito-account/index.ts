@@ -17,7 +17,13 @@ export {
 } from './api';
 
 // Store
-export { useAvitoAccountsStore } from './model/store';
+export {
+  useAvitoAccountsStore,
+  useAccountsForTenant,
+  useAccountsLoading,
+  useAccountsError,
+  useAccountsActions,
+} from './model/store';
 
 // UI
 export { AvitoAccountCard } from './ui/AvitoAccountCard';

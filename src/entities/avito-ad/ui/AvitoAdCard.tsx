@@ -46,10 +46,10 @@ export function AvitoAdCard({ ad }: AvitoAdCardProps) {
       <CardHeader className="flex flex-row items-start justify-between space-y-0 p-4 border-b bg-muted/30">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0 pr-2">
           <h3
-            className="font-semibold text-base leading-snug tracking-tight max-h-[2.75rem] overflow-hidden wrap-break-word"
+            className="font-semibold text-base leading-snug tracking-tight max-h-11 overflow-hidden wrap-break-word"
             title={ad.title}
           >
-            {ad.title}
+          {ad.title}
           </h3>
           <p className="text-xl font-bold text-primary">
             {formatPrice(ad.price)}

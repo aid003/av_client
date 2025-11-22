@@ -1,12 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { ChatListItem, useChatsStore, type Chat } from '@/entities/avito-chat';
+import {
+  ChatListItem,
+  useChatsForTenant,
+  useChatsLoading,
+  useChatsError,
+  useChatsActions,
+  type Chat,
+} from '@/entities/avito-chat';
 import { usePolling } from '@/shared/lib/use-polling';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
+import { EmptyState } from '@/shared/ui';
 
 interface AvitoChatsListProps {
   tenantId: string;
@@ -17,22 +25,26 @@ interface AvitoChatsListProps {
 // Интервал обновления в миллисекундах (15 секунд)
 const POLLING_INTERVAL = 15000;
 
+// Мемоизированный элемент чата
+const MemoizedChatItem = memo<{
+  chat: Chat;
+  onClick: () => void;
+  isSelected: boolean;
+}>(({ chat, onClick, isSelected }) => (
+  <div className={isSelected ? 'ring-2 ring-primary rounded-xl' : ''}>
+    <ChatListItem chat={chat} onClick={onClick} />
+  </div>
+));
+
 export function AvitoChatsList({
   tenantId,
   onChatSelect,
   selectedChatId,
 }: AvitoChatsListProps) {
-  const {
-    chatsByTenant,
-    loadingChatsByTenant,
-    errorsChatsByTenant,
-    loadChats,
-    refreshChats,
-  } = useChatsStore();
-
-  const chats = chatsByTenant[tenantId] || [];
-  const isLoading = loadingChatsByTenant[tenantId] ?? true;
-  const error = errorsChatsByTenant[tenantId] ?? null;
+  const chats = useChatsForTenant(tenantId);
+  const isLoading = useChatsLoading(tenantId);
+  const error = useChatsError(tenantId);
+  const { loadChats, refreshChats } = useChatsActions();
 
   // Загрузка чатов при монтировании
   useEffect(() => {
@@ -94,21 +106,11 @@ export function AvitoChatsList({
           </p>
         </div>
 
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="w-full max-w-md">
-            <CardContent className="pt-6 pb-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Нет чатов</h3>
-                <p className="text-sm text-muted-foreground">
-                  Когда покупатели начнут писать вам, чаты появятся здесь
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <EmptyState
+          icon={<MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
+          title="Нет чатов"
+          description="Когда покупатели начнут писать вам, чаты появятся здесь"
+        />
       </div>
     );
   }
@@ -129,14 +131,12 @@ export function AvitoChatsList({
 
       <div className="flex flex-col gap-2 max-w-2xl">
         {chats.map((chat) => (
-          <div
+          <MemoizedChatItem
             key={chat.id}
-            className={
-              selectedChatId === chat.id ? 'ring-2 ring-primary rounded-xl' : ''
-            }
-          >
-            <ChatListItem chat={chat} onClick={() => onChatSelect?.(chat)} />
-          </div>
+            chat={chat}
+            onClick={() => onChatSelect?.(chat)}
+            isSelected={selectedChatId === chat.id}
+          />
         ))}
       </div>
 

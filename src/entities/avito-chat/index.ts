@@ -25,7 +25,17 @@ export type {
 export { getChats, getMessages } from './api';
 
 // Store
-export { useChatsStore } from './model/store';
+export {
+  useChatsStore,
+  useChatsForTenant,
+  useChatsLoading,
+  useChatsError,
+  useMessagesForChat,
+  useMessagesLoading,
+  useMessagesError,
+  useChatsActions,
+  useMessagesActions,
+} from './model/store';
 
 // UI
 export { ChatListItem } from './ui/ChatListItem';

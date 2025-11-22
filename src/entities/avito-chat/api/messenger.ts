@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/api';
+import { apiClient, ApiError } from '@/shared/api';
 import type { ChatsResponse, MessagesResponse } from '../model/types';
 
 /**
@@ -12,7 +12,7 @@ export async function getChats(tenantId: string): Promise<ChatsResponse> {
   } catch (error) {
     // Если endpoint не найден или тенант не найден, возвращаем пустой список
     // Это может означать, что API еще не реализован или у тенанта нет чатов
-    if (error instanceof Error && 'status' in error && (error as any).status === 404) {
+    if (error instanceof ApiError && error.status === 404) {
       return [];
     }
     throw error;
