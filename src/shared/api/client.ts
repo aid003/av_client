@@ -315,7 +315,7 @@ export class ApiClient {
   /**
    * DELETE запрос
    */
-  async delete<T>(endpoint: string, options?: RequestConfig): Promise<T> {
+  async delete<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
     const timeout = options?.timeout ?? this.defaultTimeout;
     const maxRetries = options?.retries ?? 0;
@@ -334,6 +334,7 @@ export class ApiClient {
               'Accept': 'application/json',
               ...options?.headers,
             },
+            body: data ? JSON.stringify(data) : undefined,
             signal: options?.signal,
           },
           timeout
