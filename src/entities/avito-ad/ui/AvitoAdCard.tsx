@@ -1,11 +1,13 @@
-import { ExternalLink, MapPin, Tag, Hash, Calendar, Clock } from 'lucide-react';
+import { ExternalLink, MapPin, Tag, Hash, Calendar, Clock, BookText, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardFooter } from '@/shared/ui/components/ui/card';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { Button } from '@/shared/ui/components/ui/button';
 import type { AvitoAd } from '../model/types';
+import { useAdKbLinks } from '@/entities/ad-knowledge-link/model/store';
 
 interface AvitoAdCardProps {
   ad: AvitoAd;
+  onViewKnowledgeBases?: (ad: AvitoAd) => void;
 }
 
 const statusConfig: Record<AvitoAd['status'], { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -18,7 +20,7 @@ const statusConfig: Record<AvitoAd['status'], { label: string; variant: 'default
   ANOTHER_USER: { label: 'Другой пользователь', variant: 'outline' },
 };
 
-export function AvitoAdCard({ ad }: AvitoAdCardProps) {
+export function AvitoAdCard({ ad, onViewKnowledgeBases }: AvitoAdCardProps) {
   const formatPrice = (price: string) => {
     const num = parseInt(price, 10);
     if (isNaN(num)) return price;
@@ -40,6 +42,8 @@ export function AvitoAdCard({ ad }: AvitoAdCardProps) {
   };
 
   const status = statusConfig[ad.status];
+  const kbLinks = useAdKbLinks(ad.id);
+  const kbCount = kbLinks?.length ?? undefined;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-all hover:shadow-md p-0 gap-0">
@@ -119,9 +123,23 @@ export function AvitoAdCard({ ad }: AvitoAdCardProps) {
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <div className="w-full pt-4 border-t flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Hash className="h-3.5 w-3.5" />
-          <span className="font-mono">{ad.itemId}</span>
+        <div className="w-full pt-4 border-t flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Hash className="h-3.5 w-3.5" />
+            <span className="font-mono">{ad.itemId}</span>
+          </div>
+          {onViewKnowledgeBases && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewKnowledgeBases(ad)}
+              className="h-8"
+            >
+              <BookText className="h-3.5 w-3.5 mr-2" />
+              БЗ: {typeof kbCount === 'number' ? kbCount : '—'}
+              <Eye className="h-3.5 w-3.5 ml-2" />
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

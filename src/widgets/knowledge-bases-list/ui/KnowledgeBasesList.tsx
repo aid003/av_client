@@ -14,6 +14,7 @@ import { EditKnowledgeBaseDialog } from '@/features/edit-knowledge-base';
 import { DeleteKnowledgeBaseDialog } from '@/features/delete-knowledge-base';
 import { UploadMaterialsDialog } from '@/features/upload-knowledge-materials';
 import { ViewChunksDialog } from '@/features/view-chunks';
+import { AttachAdsToKnowledgeBaseDialog } from '@/features/link-ads-to-knowledge-base/ui/AttachAdsToKnowledgeBaseDialog';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardHeader } from '@/shared/ui/components/ui/card';
 import { EmptyState, EmptyStateIcons } from '@/shared/ui';
@@ -46,6 +47,8 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isViewChunksDialogOpen, setIsViewChunksDialogOpen] = useState(false);
+  const [attachingKb, setAttachingKb] = useState<KnowledgeBase | null>(null);
+  const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
 
   useEffect(() => {
     loadKnowledgeBases(tenantId);
@@ -69,6 +72,11 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const handleViewChunks = (kb: KnowledgeBase) => {
     setViewingChunksKb(kb);
     setIsViewChunksDialogOpen(true);
+  };
+
+  const handleAttachAds = (kb: KnowledgeBase) => {
+    setAttachingKb(kb);
+    setIsAttachDialogOpen(true);
   };
 
   // Состояние загрузки
@@ -125,6 +133,7 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
             onDelete={handleDelete}
             onUploadMaterials={handleUploadMaterials}
             onViewChunks={handleViewChunks}
+            onAttachAds={handleAttachAds}
           />
         ))}
       </div>
@@ -161,6 +170,13 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
         tenantId={tenantId}
         open={isViewChunksDialogOpen}
         onOpenChange={setIsViewChunksDialogOpen}
+      />
+
+      <AttachAdsToKnowledgeBaseDialog
+        knowledgeBase={attachingKb}
+        tenantId={tenantId}
+        open={isAttachDialogOpen}
+        onOpenChange={setIsAttachDialogOpen}
       />
     </>
   );

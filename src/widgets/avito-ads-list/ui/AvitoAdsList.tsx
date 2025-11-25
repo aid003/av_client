@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Package } from 'lucide-react';
-import { AvitoAdCard, useInfiniteAds } from '@/entities/avito-ad';
+import { AvitoAdCard, useInfiniteAds, type AvitoAd } from '@/entities/avito-ad';
 import { SyncAvitoAdsButton } from '@/features/sync-avito-ads';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/shared/ui/components/ui/card';
+import { ViewAdKnowledgeBasesDialog } from '@/features/view-ad-knowledge-bases/ui/ViewAdKnowledgeBasesDialog';
+import { useAdKbActions } from '@/entities/ad-knowledge-link/model/store';
 
 interface AvitoAdsListProps {
   tenantId: string;
@@ -26,6 +28,10 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
     refresh,
   } = useInfiniteAds(tenantId);
 
+  const [selectedAd, setSelectedAd] = useState<AvitoAd | null>(null);
+  const [isKbDialogOpen, setIsKbDialogOpen] = useState(false);
+  const { loadLinks } = useAdKbActions();
+
   useEffect(() => {
     loadInitial();
   }, [loadInitial]);
@@ -33,6 +39,20 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
   const handleSyncSuccess = () => {
     refresh();
   };
+
+  const handleViewKb = (ad: AvitoAd) => {
+    setSelectedAd(ad);
+    setIsKbDialogOpen(true);
+  };
+
+  // Лениво подгружаем связи для видимых карточек (чтобы отображать корректный счетчик)
+  useEffect(() => {
+    if (ads.length === 0) return;
+    // Загружаем без force — стор сам отфильтрует уже загруженные
+    ads.forEach((ad) => {
+      loadLinks(ad.id, tenantId);
+    });
+  }, [ads, tenantId, loadLinks]);
 
   if (isLoading) {
     return (
@@ -124,7 +144,7 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {ads.map((ad) => (
-          <AvitoAdCard key={ad.id} ad={ad} />
+          <AvitoAdCard key={ad.id} ad={ad} onViewKnowledgeBases={handleViewKb} />
         ))}
       </div>
 
@@ -146,6 +166,12 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
           </Button>
         </div>
       )}
+      <ViewAdKnowledgeBasesDialog
+        ad={selectedAd}
+        tenantId={tenantId}
+        open={isKbDialogOpen}
+        onOpenChange={setIsKbDialogOpen}
+      />
     </div>
   );
 }

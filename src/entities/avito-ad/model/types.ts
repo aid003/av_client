@@ -40,6 +40,20 @@ export interface AvitoAdsResponse {
   data: AvitoAd[];
 }
 
+export interface AdKnowledgeBaseLink {
+  id: string;
+  knowledgeBaseId: string;
+  knowledgeBaseName: string;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AdKnowledgeBaseLinksResponse {
+  data: AdKnowledgeBaseLink[];
+  total: number;
+}
+
 export interface AvitoAdsSyncResponse {
   success: boolean;
   message: string;

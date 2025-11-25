@@ -33,6 +33,7 @@ interface KnowledgeBaseCardProps {
   onDelete?: (kb: KnowledgeBase) => void;
   onUploadMaterials?: (kb: KnowledgeBase) => void;
   onViewChunks?: (kb: KnowledgeBase) => void;
+  onAttachAds?: (kb: KnowledgeBase) => void;
 }
 
 export function KnowledgeBaseCard({
@@ -41,6 +42,7 @@ export function KnowledgeBaseCard({
   onDelete,
   onUploadMaterials,
   onViewChunks,
+  onAttachAds,
 }: KnowledgeBaseCardProps) {
   const formatDate = (dateString: string) => {
     try {
@@ -91,6 +93,12 @@ export function KnowledgeBaseCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onAttachAds && (
+                <DropdownMenuItem onClick={() => onAttachAds(knowledgeBase)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Привязать объявления
+                </DropdownMenuItem>
+              )}
               {onEdit && (
                 <DropdownMenuItem onClick={() => onEdit(knowledgeBase)}>
                   <Edit className="h-4 w-4 mr-2" />
