@@ -13,7 +13,7 @@ import { Button } from '@/shared/ui/components/ui/button';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Clipboard } from 'lucide-react';
 import {
   updateChunk,
   type KnowledgeBase,
@@ -46,6 +46,27 @@ export function EditChunkDialog({
       setText(chunk.text);
     }
   }, [chunk]);
+
+  const handlePasteFromClipboard = () => {
+    // Используем Telegram WebApp API для чтения буфера обмена
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.readTextFromClipboard) {
+      try {
+        window.Telegram.WebApp.readTextFromClipboard((clipboardText: string | null) => {
+          if (clipboardText) {
+            setText((prev) => prev + clipboardText);
+            setError(null);
+          } else {
+            setError('Буфер обмена пуст');
+          }
+        });
+      } catch (err) {
+        console.error('Ошибка при чтении буфера обмена:', err);
+        setError('Не удалось прочитать буфер обмена. Эта функция работает только для ботов в меню вложений.');
+      }
+    } else {
+      setError('Telegram WebApp API недоступен или бот не добавлен в меню вложений');
+    }
+  };
 
   const handleSave = async () => {
     if (!chunk || !knowledgeBase) return;
@@ -93,7 +114,20 @@ export function EditChunkDialog({
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="chunk-text">Текст</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="chunk-text">Текст</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePasteFromClipboard}
+                disabled={isLoading}
+                className="h-8"
+              >
+                <Clipboard className="h-3.5 w-3.5 mr-2" />
+                Вставить из буфера обмена
+              </Button>
+            </div>
             <Textarea
               id="chunk-text"
               placeholder="Введите текст чанка"

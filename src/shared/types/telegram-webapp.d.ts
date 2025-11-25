@@ -7,6 +7,7 @@ declare global {
         ready: () => void;
         expand: () => void;
         close: () => void;
+        readTextFromClipboard: (callback?: (text: string | null) => void) => void;
         [key: string]: unknown;
       };
       [key: string]: unknown;

@@ -73,9 +73,8 @@ export async function deleteChunk(
   chunkId: string,
   tenantId: string
 ): Promise<void> {
-  return apiClient.delete<void, never>(
-    `/api/knowledge-bases/${knowledgeBaseId}/chunks/${chunkId}?tenantId=${tenantId}`,
-    undefined
+  return apiClient.delete<void>(
+    `/api/knowledge-bases/${knowledgeBaseId}/chunks/${chunkId}?tenantId=${tenantId}`
   );
 }
 

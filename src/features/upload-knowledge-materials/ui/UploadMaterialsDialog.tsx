@@ -6,42 +6,30 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/shared/ui/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/components/ui/tabs';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
-import { Checkbox } from '@/shared/ui/components/ui/checkbox';
-import { Card, CardContent } from '@/shared/ui/components/ui/card';
-import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import {
-  Upload,
-  FileText,
   AlertCircle,
-  Edit,
-  Trash2,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
+  Clipboard,
+  FileText,
 } from 'lucide-react';
 import {
   uploadText,
   getChunks,
-  deleteChunk,
-  deleteChunksBatch,
   type KnowledgeBase,
-  type Chunk,
-  type ChunkListResponseDto,
 } from '@/entities/knowledge-base';
-import { EditChunkDialog } from './EditChunkDialog';
-import { DeleteChunksConfirmDialog } from './DeleteChunksConfirmDialog';
 
 interface UploadMaterialsDialogProps {
   knowledgeBase: KnowledgeBase | null;
   tenantId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onViewChunks?: () => void;
 }
 
 export function UploadMaterialsDialog({
@@ -49,57 +37,44 @@ export function UploadMaterialsDialog({
   tenantId,
   open,
   onOpenChange,
+  onViewChunks,
 }: UploadMaterialsDialogProps) {
-  const [activeTab, setActiveTab] = useState<'upload' | 'chunks'>('upload');
   const [text, setText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [currentChunksCount, setCurrentChunksCount] = useState<number | null>(null);
+  const [isLoadingCount, setIsLoadingCount] = useState(false);
 
-  const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [isLoadingChunks, setIsLoadingChunks] = useState(false);
-  const [chunksError, setChunksError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalChunks, setTotalChunks] = useState(0);
-  const perPage = 25;
-
-  const [selectedChunkIds, setSelectedChunkIds] = useState<Set<string>>(new Set());
-  const [editingChunk, setEditingChunk] = useState<Chunk | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deletingChunks, setDeletingChunks] = useState<Chunk[]>([]);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  // Загрузка чанков при открытии диалога или смене страницы
+  // Загрузка текущего количества чанков при открытии диалога
   useEffect(() => {
-    if (open && knowledgeBase && activeTab === 'chunks') {
-      loadChunks();
+    if (open && knowledgeBase) {
+      loadChunksCount();
     }
-  }, [open, knowledgeBase, activeTab, currentPage]);
+  }, [open, knowledgeBase]);
 
-  const loadChunks = async () => {
-    if (!knowledgeBase) return;
+  const loadChunksCount = async () => {
+    if (!knowledgeBase || !knowledgeBase.id) {
+      return;
+    }
 
-    setIsLoadingChunks(true);
-    setChunksError(null);
+    // Валидация CUID формата
+    const cuidPattern = /^c[a-z0-9]{24}$/;
+    if (!cuidPattern.test(knowledgeBase.id) || !cuidPattern.test(tenantId)) {
+      return;
+    }
+
+    setIsLoadingCount(true);
 
     try {
-      const response: ChunkListResponseDto = await getChunks(
-        knowledgeBase.id,
-        tenantId,
-        currentPage,
-        perPage
-      );
-
-      setChunks(response.data);
-      setTotalPages(response.meta.totalPages);
-      setTotalChunks(response.meta.total);
+      // Запрашиваем первую страницу с 1 элементом только для получения total
+      const response = await getChunks(knowledgeBase.id, tenantId, 1, 1);
+      setCurrentChunksCount(response.meta.total);
     } catch (err) {
-      setChunksError(
-        err instanceof Error ? err.message : 'Ошибка при загрузке чанков'
-      );
+      console.error('Ошибка при загрузке количества чанков:', err);
+      setCurrentChunksCount(null);
     } finally {
-      setIsLoadingChunks(false);
+      setIsLoadingCount(false);
     }
   };
 
@@ -123,12 +98,8 @@ export function UploadMaterialsDialog({
       );
       setText('');
 
-      // Переключаемся на вкладку с чанками через 1.5 секунды
-      setTimeout(() => {
-        setActiveTab('chunks');
-        setCurrentPage(1);
-        setUploadSuccess(null);
-      }, 1500);
+      // Обновляем счетчик чанков
+      await loadChunksCount();
     } catch (err) {
       setUploadError(
         err instanceof Error ? err.message : 'Ошибка при загрузке текста'
@@ -138,72 +109,36 @@ export function UploadMaterialsDialog({
     }
   };
 
-  const handleSelectChunk = (chunkId: string) => {
-    const newSelected = new Set(selectedChunkIds);
-    if (newSelected.has(chunkId)) {
-      newSelected.delete(chunkId);
+  const handlePasteFromClipboard = () => {
+    // Используем Telegram WebApp API для чтения буфера обмена
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.readTextFromClipboard) {
+      try {
+        window.Telegram.WebApp.readTextFromClipboard((clipboardText: string | null) => {
+          if (clipboardText) {
+            setText((prev) => prev + clipboardText);
+            setUploadError(null);
+          } else {
+            setUploadError('Буфер обмена пуст');
+          }
+        });
+      } catch (err) {
+        console.error('Ошибка при чтении буфера обмена:', err);
+        setUploadError('Не удалось прочитать буфер обмена. Эта функция работает только для ботов в меню вложений.');
+      }
     } else {
-      newSelected.add(chunkId);
-    }
-    setSelectedChunkIds(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedChunkIds.size === chunks.length) {
-      setSelectedChunkIds(new Set());
-    } else {
-      setSelectedChunkIds(new Set(chunks.map((c) => c.id)));
+      setUploadError('Telegram WebApp API недоступен или бот не добавлен в меню вложений');
     }
   };
 
-  const handleEditChunk = (chunk: Chunk) => {
-    setEditingChunk(chunk);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteChunk = (chunk: Chunk) => {
-    setDeletingChunks([chunk]);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDeleteSelected = () => {
-    const chunksToDelete = chunks.filter((c) => selectedChunkIds.has(c.id));
-    setDeletingChunks(chunksToDelete);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirmed = async () => {
-    setSelectedChunkIds(new Set());
-    setIsDeleteDialogOpen(false);
-    await loadChunks();
-  };
-
-  const handleEditConfirmed = async () => {
-    setIsEditDialogOpen(false);
-    await loadChunks();
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateString;
-    }
+  const handleViewChunks = () => {
+    onOpenChange(false);
+    onViewChunks?.();
   };
 
   const resetState = () => {
     setText('');
     setUploadError(null);
     setUploadSuccess(null);
-    setSelectedChunkIds(new Set());
-    setCurrentPage(1);
-    setActiveTab('upload');
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -214,223 +149,92 @@ export function UploadMaterialsDialog({
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
-              {knowledgeBase?.name} - Управление материалами
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {knowledgeBase?.name} - Загрузить материалы
+          </DialogTitle>
+          <DialogDescription>
+            {isLoadingCount ? (
+              'Загрузка информации...'
+            ) : currentChunksCount !== null ? (
+              `База знаний содержит ${currentChunksCount} ${
+                currentChunksCount === 1
+                  ? 'чанк'
+                  : currentChunksCount < 5
+                  ? 'чанка'
+                  : 'чанков'
+              }`
+            ) : (
+              'Загрузите текст, который будет разбит на чанки и добавлен в базу знаний'
+            )}
+          </DialogDescription>
+        </DialogHeader>
 
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as 'upload' | 'chunks')}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            <TabsList>
-              <TabsTrigger value="upload">
-                <Upload className="h-4 w-4 mr-2" />
-                Загрузить
-              </TabsTrigger>
-              <TabsTrigger value="chunks">
-                <FileText className="h-4 w-4 mr-2" />
-                Чанки ({totalChunks})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upload" className="space-y-4 flex-1">
-              <div className="space-y-2">
-                <Label htmlFor="upload-text">Текст для загрузки</Label>
-                <Textarea
-                  id="upload-text"
-                  placeholder="Вставьте или введите текст, который будет разбит на чанки и добавлен в базу знаний..."
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  disabled={isUploading}
-                  rows={15}
-                  className="resize-none"
-                />
-              </div>
-
-              {uploadError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{uploadError}</AlertDescription>
-                </Alert>
-              )}
-
-              {uploadSuccess && (
-                <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <AlertDescription className="text-green-800 dark:text-green-200">
-                    {uploadSuccess}
-                  </AlertDescription>
-                </Alert>
-              )}
-
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="upload-text">Текст для загрузки</Label>
               <Button
-                onClick={handleUpload}
-                disabled={isUploading || !text.trim()}
-                className="w-full"
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePasteFromClipboard}
+                disabled={isUploading}
+                className="h-8"
               >
-                {isUploading ? 'Загрузка...' : 'Загрузить текст'}
+                <Clipboard className="h-3.5 w-3.5 mr-2" />
+                Вставить из буфера обмена
               </Button>
-            </TabsContent>
+            </div>
+            <Textarea
+              id="upload-text"
+              placeholder="Вставьте или введите текст, который будет разбит на чанки и добавлен в базу знаний..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={isUploading}
+              rows={15}
+              className="resize-none"
+            />
+          </div>
 
-            <TabsContent
-              value="chunks"
-              className="flex-1 flex flex-col overflow-hidden space-y-4"
-            >
-              {selectedChunkIds.size > 0 && (
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm text-muted-foreground">
-                    Выбрано: {selectedChunkIds.size}
-                  </span>
+          {uploadError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{uploadError}</AlertDescription>
+            </Alert>
+          )}
+
+          {uploadSuccess && (
+            <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription className="text-green-800 dark:text-green-200 flex items-center justify-between">
+                <span>{uploadSuccess}</span>
+                {onViewChunks && (
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    onClick={handleDeleteSelected}
+                    onClick={handleViewChunks}
+                    className="ml-4 h-8 border-green-300 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Удалить выбранные
+                    <FileText className="h-3.5 w-3.5 mr-2" />
+                    Просмотреть чанки
                   </Button>
-                </div>
-              )}
-
-              <div className="flex-1 overflow-y-auto space-y-3">
-                {isLoadingChunks ? (
-                  <>
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i}>
-                        <CardContent className="p-4 space-y-2">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                ) : chunksError ? (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{chunksError}</AlertDescription>
-                  </Alert>
-                ) : chunks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium text-muted-foreground">
-                      Нет чанков
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Загрузите текст, чтобы создать чанки
-                    </p>
-                  </div>
-                ) : (
-                  chunks.map((chunk) => (
-                    <Card key={chunk.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={selectedChunkIds.has(chunk.id)}
-                            onCheckedChange={() => handleSelectChunk(chunk.id)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {chunk.text}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{formatDate(chunk.createdAt)}</span>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleEditChunk(chunk)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleDeleteChunk(chunk)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
                 )}
-              </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1 || isLoadingChunks}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Назад
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Страница {currentPage} из {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages || isLoadingChunks}
-                  >
-                    Вперёд
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              )}
-
-              {chunks.length > 0 && (
-                <div className="pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    className="w-full"
-                  >
-                    {selectedChunkIds.size === chunks.length
-                      ? 'Снять выделение'
-                      : 'Выбрать все на странице'}
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      <EditChunkDialog
-        chunk={editingChunk}
-        knowledgeBase={knowledgeBase}
-        tenantId={tenantId}
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onSuccess={handleEditConfirmed}
-      />
-
-      <DeleteChunksConfirmDialog
-        chunks={deletingChunks}
-        knowledgeBase={knowledgeBase}
-        tenantId={tenantId}
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onSuccess={handleDeleteConfirmed}
-      />
-    </>
+          <Button
+            onClick={handleUpload}
+            disabled={isUploading || !text.trim()}
+            className="w-full"
+          >
+            {isUploading ? 'Загрузка...' : 'Загрузить текст'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

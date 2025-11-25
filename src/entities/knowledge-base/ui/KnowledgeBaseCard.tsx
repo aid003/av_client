@@ -22,6 +22,8 @@ import {
   Edit,
   Trash2,
   Settings,
+  Upload,
+  FileText,
 } from 'lucide-react';
 import type { KnowledgeBase } from '../model/types';
 
@@ -30,6 +32,7 @@ interface KnowledgeBaseCardProps {
   onEdit?: (kb: KnowledgeBase) => void;
   onDelete?: (kb: KnowledgeBase) => void;
   onUploadMaterials?: (kb: KnowledgeBase) => void;
+  onViewChunks?: (kb: KnowledgeBase) => void;
 }
 
 export function KnowledgeBaseCard({
@@ -37,6 +40,7 @@ export function KnowledgeBaseCard({
   onEdit,
   onDelete,
   onUploadMaterials,
+  onViewChunks,
 }: KnowledgeBaseCardProps) {
   const formatDate = (dateString: string) => {
     try {
@@ -141,16 +145,31 @@ export function KnowledgeBaseCard({
         )}
       </CardContent>
 
-      {onUploadMaterials && (
+      {(onUploadMaterials || onViewChunks) && (
         <CardFooter className="p-4 pt-0">
           <div className="w-full pt-4 border-t">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => onUploadMaterials(knowledgeBase)}
-            >
-              Загрузить материалы
-            </Button>
+            <div className="flex flex-col gap-2">
+              {onUploadMaterials && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => onUploadMaterials(knowledgeBase)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Загрузить материалы
+                </Button>
+              )}
+              {onViewChunks && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => onViewChunks(knowledgeBase)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Управление чанками
+                </Button>
+              )}
+            </div>
           </div>
         </CardFooter>
       )}

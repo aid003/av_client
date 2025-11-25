@@ -13,6 +13,7 @@ import { CreateKnowledgeBaseButton } from '@/features/create-knowledge-base';
 import { EditKnowledgeBaseDialog } from '@/features/edit-knowledge-base';
 import { DeleteKnowledgeBaseDialog } from '@/features/delete-knowledge-base';
 import { UploadMaterialsDialog } from '@/features/upload-knowledge-materials';
+import { ViewChunksDialog } from '@/features/view-chunks';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardHeader } from '@/shared/ui/components/ui/card';
 import { EmptyState, EmptyStateIcons } from '@/shared/ui';
@@ -28,6 +29,7 @@ const MemoizedKnowledgeBaseCard = memo<{
   onEdit: (kb: KnowledgeBase) => void;
   onDelete: (kb: KnowledgeBase) => void;
   onUploadMaterials: (kb: KnowledgeBase) => void;
+  onViewChunks: (kb: KnowledgeBase) => void;
 }>(KnowledgeBaseCard);
 
 export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
@@ -39,9 +41,11 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
   const [deletingKb, setDeletingKb] = useState<KnowledgeBase | null>(null);
   const [uploadingKb, setUploadingKb] = useState<KnowledgeBase | null>(null);
+  const [viewingChunksKb, setViewingChunksKb] = useState<KnowledgeBase | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isViewChunksDialogOpen, setIsViewChunksDialogOpen] = useState(false);
 
   useEffect(() => {
     loadKnowledgeBases(tenantId);
@@ -60,6 +64,11 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const handleUploadMaterials = (kb: KnowledgeBase) => {
     setUploadingKb(kb);
     setIsUploadDialogOpen(true);
+  };
+
+  const handleViewChunks = (kb: KnowledgeBase) => {
+    setViewingChunksKb(kb);
+    setIsViewChunksDialogOpen(true);
   };
 
   // Состояние загрузки
@@ -115,6 +124,7 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onUploadMaterials={handleUploadMaterials}
+            onViewChunks={handleViewChunks}
           />
         ))}
       </div>
@@ -138,6 +148,19 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
         tenantId={tenantId}
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
+        onViewChunks={() => {
+          if (uploadingKb) {
+            setViewingChunksKb(uploadingKb);
+            setIsViewChunksDialogOpen(true);
+          }
+        }}
+      />
+
+      <ViewChunksDialog
+        knowledgeBase={viewingChunksKb}
+        tenantId={tenantId}
+        open={isViewChunksDialogOpen}
+        onOpenChange={setIsViewChunksDialogOpen}
       />
     </>
   );
