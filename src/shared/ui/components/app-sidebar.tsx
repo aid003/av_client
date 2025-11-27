@@ -21,6 +21,7 @@ import {
   BookText,
   ChevronDown,
   ChevronUp,
+  FileCode,
   MessageSquare,
   ScrollText,
   User2,
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { title: "Объявления", url: "/ads", icon: ScrollText },
   { title: "Чаты", url: "/chats", icon: MessageSquare },
   { title: "База знаний", url: "/knowledge-base", icon: BookText },
+  { title: "Скрипты продаж", url: "/sales-scripts", icon: FileCode },
 ];
 
 export function AppSidebar() {

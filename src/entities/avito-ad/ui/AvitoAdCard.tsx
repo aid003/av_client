@@ -1,9 +1,10 @@
-import { ExternalLink, MapPin, Tag, Hash, Calendar, Clock, BookText, Eye } from 'lucide-react';
+import { ExternalLink, MapPin, Tag, Hash, Calendar, Clock, BookText, Eye, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardFooter } from '@/shared/ui/components/ui/card';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { Button } from '@/shared/ui/components/ui/button';
 import type { AvitoAd } from '../model/types';
 import { useAdKbLinks } from '@/entities/ad-knowledge-link/model/store';
+import { useAdScriptBindings } from '@/entities/ad-script-binding/model/store';
 
 interface AvitoAdCardProps {
   ad: AvitoAd;
@@ -43,7 +44,9 @@ export function AvitoAdCard({ ad, onViewKnowledgeBases }: AvitoAdCardProps) {
 
   const status = statusConfig[ad.status];
   const kbLinks = useAdKbLinks(ad.id);
-  const kbCount = kbLinks?.length ?? undefined;
+  const kbCount = kbLinks?.length ?? 0;
+  const scriptBindings = useAdScriptBindings(ad.id);
+  const activeBinding = scriptBindings?.find((b) => b.isActive) ?? null;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-all hover:shadow-md p-0 gap-0">
@@ -123,23 +126,50 @@ export function AvitoAdCard({ ad, onViewKnowledgeBases }: AvitoAdCardProps) {
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <div className="w-full pt-4 border-t flex items-center justify-between gap-2">
+        <div className="w-full pt-4 border-t space-y-3">
+          {/* ID объявления */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Hash className="h-3.5 w-3.5" />
             <span className="font-mono">{ad.itemId}</span>
           </div>
-          {onViewKnowledgeBases && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onViewKnowledgeBases(ad)}
-              className="h-8"
-            >
-              <BookText className="h-3.5 w-3.5 mr-2" />
-              БЗ: {typeof kbCount === 'number' ? kbCount : '—'}
-              <Eye className="h-3.5 w-3.5 ml-2" />
-            </Button>
-          )}
+
+          {/* Привязки: БЗ и Скрипты */}
+          <div className="space-y-2">
+            {/* Базы знаний */}
+            {onViewKnowledgeBases && (
+              <div
+                onClick={() => onViewKnowledgeBases(ad)}
+                className="flex items-center gap-2 p-2.5 rounded-md border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              >
+                <BookText className="h-4 w-4 shrink-0" />
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Базы знаний
+                  </span>
+                  <span className="text-sm font-semibold">
+                    {kbCount > 0 ? kbCount : 'Не привязано'}
+                  </span>
+                </div>
+                {kbCount > 0 && <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+              </div>
+            )}
+
+            {/* Скрипты */}
+            <div className="flex items-center gap-2 p-2.5 rounded-md border bg-card">
+              <FileText className="h-4 w-4 shrink-0" />
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Скрипт продаж
+                </span>
+                <span
+                  className="text-sm font-semibold truncate"
+                  title={activeBinding?.salesScriptName}
+                >
+                  {activeBinding ? activeBinding.salesScriptName : 'Не привязано'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </CardFooter>
     </Card>

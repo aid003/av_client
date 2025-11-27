@@ -31,6 +31,7 @@ const MemoizedKnowledgeBaseCard = memo<{
   onDelete: (kb: KnowledgeBase) => void;
   onUploadMaterials: (kb: KnowledgeBase) => void;
   onViewChunks: (kb: KnowledgeBase) => void;
+  onAttachAds: (kb: KnowledgeBase) => void;
 }>(KnowledgeBaseCard);
 
 export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {

@@ -1,0 +1,180 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  Save,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
+import { Button } from '@/shared/ui/components/ui/button';
+import { Badge } from '@/shared/ui/components/ui/badge';
+import {
+  useScriptEditorMeta,
+  useScriptEditorStatus,
+  useScriptEditorActions,
+} from '../model/store';
+import {
+  updateSalesScript,
+  validateScriptDefinition,
+  type ValidationResult,
+} from '@/entities/sales-script';
+
+interface EditorHeaderProps {
+  tenantId: string;
+}
+
+export function EditorHeader({ tenantId }: EditorHeaderProps) {
+  const router = useRouter();
+  const meta = useScriptEditorMeta();
+  const status = useScriptEditorStatus();
+  const { getDefinition, setSaving, setError, markClean } = useScriptEditorActions();
+
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleBack = () => {
+    if (status.isDirty) {
+      const confirmed = window.confirm(
+        'У вас есть несохранённые изменения. Вы уверены, что хотите выйти?'
+      );
+      if (!confirmed) return;
+    }
+    router.push('/sales-scripts');
+  };
+
+  const handleSave = async () => {
+    if (!meta.scriptId) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const definition = getDefinition();
+      await updateSalesScript(meta.scriptId, tenantId, {
+        name: meta.scriptName,
+        description: meta.scriptDescription || undefined,
+        definition,
+      });
+      markClean();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleValidate = async () => {
+    if (!meta.scriptId) return;
+
+    setIsValidating(true);
+    setValidationResult(null);
+
+    try {
+      const definition = getDefinition();
+      const result = await validateScriptDefinition(meta.scriptId, tenantId, definition);
+      setValidationResult(result);
+    } catch (err) {
+      setValidationResult({
+        valid: false,
+        errors: [
+          {
+            path: '',
+            message: err instanceof Error ? err.message : 'Ошибка валидации',
+          },
+        ],
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  return (
+    <header className="flex items-center justify-between px-4 py-3 border-b bg-background">
+      {/* Left side */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+
+        <div className="flex flex-col">
+          <h1 className="text-lg font-semibold leading-tight">
+            {meta.scriptName || 'Новый скрипт'}
+          </h1>
+          {meta.scriptDescription && (
+            <p className="text-xs text-muted-foreground truncate max-w-[300px]">
+              {meta.scriptDescription}
+            </p>
+          )}
+        </div>
+
+        {status.isDirty && (
+          <Badge variant="secondary" className="text-xs">
+            Не сохранено
+          </Badge>
+        )}
+      </div>
+
+      {/* Right side */}
+      <div className="flex items-center gap-2">
+        {/* Validation result */}
+        {validationResult && (
+          <div className="flex items-center gap-1.5 mr-2">
+            {validationResult.valid ? (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-green-600 dark:text-green-400">
+                  Скрипт валиден
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <span className="text-sm text-destructive">
+                  {validationResult.errors.length} ошибок
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Error message */}
+        {status.error && (
+          <span className="text-sm text-destructive mr-2">{status.error}</span>
+        )}
+
+        {/* Validate button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleValidate}
+          disabled={isValidating}
+        >
+          {isValidating ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <CheckCircle className="w-4 h-4 mr-2" />
+          )}
+          Проверить
+        </Button>
+
+        {/* Save button */}
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={status.isSaving || !status.isDirty}
+        >
+          {status.isSaving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Сохранить
+        </Button>
+      </div>
+    </header>
+  );
+}
+
