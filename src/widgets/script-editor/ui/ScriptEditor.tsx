@@ -74,7 +74,7 @@ export function ScriptEditor({
 
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-screen bg-background">
+      <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
         <EditorHeader tenantId={tenantId} />
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -114,7 +114,7 @@ export function ScriptEditor({
 
 function ScriptEditorSkeleton() {
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
       {/* Header skeleton */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-4">
