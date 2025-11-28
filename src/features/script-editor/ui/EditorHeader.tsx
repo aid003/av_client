@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -16,9 +16,12 @@ import {
   useScriptEditorStatus,
   useScriptEditorActions,
 } from '../model/store';
+import { isDefinitionValid } from '../model/validators';
 import {
+  createSalesScript,
   updateSalesScript,
   validateScriptDefinition,
+  useSalesScriptsActions,
   type ValidationResult,
 } from '@/entities/sales-script';
 
@@ -30,10 +33,21 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const router = useRouter();
   const meta = useScriptEditorMeta();
   const status = useScriptEditorStatus();
-  const { getDefinition, setSaving, setError, markClean } = useScriptEditorActions();
+  const { getDefinition, setSaving, setError, markClean, initFromDefinition } = useScriptEditorActions();
+  const { addSalesScript } = useSalesScriptsActions();
 
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+
+  useEffect(() => {
+    if (validationResult?.valid) {
+      const timer = setTimeout(() => {
+        setValidationResult(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [validationResult]);
 
   const handleBack = () => {
     if (status.isDirty) {
@@ -46,19 +60,58 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   };
 
   const handleSave = async () => {
-    if (!meta.scriptId) return;
-
     setSaving(true);
     setError(null);
 
     try {
       const definition = getDefinition();
-      await updateSalesScript(meta.scriptId, tenantId, {
-        name: meta.scriptName,
-        description: meta.scriptDescription || undefined,
-        definition,
-      });
-      markClean();
+
+      // Если скрипт еще не создан
+      if (!meta.scriptId) {
+        // Валидируем структуру перед созданием
+        if (!isDefinitionValid(definition)) {
+          setError(
+            'Скрипт должен содержать блок START и хотя бы одно ребро с условием ALWAYS от START'
+          );
+          setSaving(false);
+          return;
+        }
+
+        // Создаем новый скрипт
+        const newScript = await createSalesScript(tenantId, {
+          name: meta.scriptName,
+          description: meta.scriptDescription || undefined,
+          definition,
+          isActive: meta.isActive,
+        });
+
+        // Добавляем скрипт в store списка скриптов
+        addSalesScript(tenantId, newScript);
+
+        // Обновляем store редактора с новым scriptId
+        initFromDefinition(
+          newScript.id,
+          newScript.name,
+          newScript.description,
+          newScript.isActive,
+          newScript.definition
+        );
+
+        // Очищаем localStorage
+        localStorage.removeItem('newScriptData');
+
+        // Редирект на страницу редактирования
+        router.push(`/sales-scripts/${newScript.id}/edit`);
+        markClean();
+      } else {
+        // Обновляем существующий скрипт
+        await updateSalesScript(meta.scriptId, tenantId, {
+          name: meta.scriptName,
+          description: meta.scriptDescription || undefined,
+          definition,
+        });
+        markClean();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
     } finally {
@@ -67,15 +120,20 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   };
 
   const handleValidate = async () => {
-    if (!meta.scriptId) return;
-
     setIsValidating(true);
     setValidationResult(null);
 
     try {
       const definition = getDefinition();
-      const result = await validateScriptDefinition(meta.scriptId, tenantId, definition);
-      setValidationResult(result);
+      const result = await validateScriptDefinition(definition);
+
+      // Если API вернул пустой объект или объект без ошибок - считаем валидным
+      const normalizedResult: ValidationResult = {
+        valid: !result.errors || result.errors.length === 0,
+        errors: result.errors || [],
+      };
+
+      setValidationResult(normalizedResult);
     } catch (err) {
       setValidationResult({
         valid: false,
@@ -129,14 +187,16 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
                   Скрипт валиден
                 </span>
               </>
-            ) : (
+            ) : validationResult.errors.length > 0 ? (
               <>
                 <AlertCircle className="w-4 h-4 text-destructive" />
                 <span className="text-sm text-destructive">
-                  {validationResult.errors.length} ошибок
+                  {validationResult.errors.length === 1
+                    ? '1 ошибка'
+                    : `${validationResult.errors.length} ошибок`}
                 </span>
               </>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -164,14 +224,14 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={status.isSaving || !status.isDirty}
+          disabled={status.isSaving || (!status.isDirty && meta.scriptId !== null)}
         >
           {status.isSaving ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
-          Сохранить
+          {meta.scriptId === null ? 'Создать скрипт' : 'Сохранить'}
         </Button>
       </div>
     </header>

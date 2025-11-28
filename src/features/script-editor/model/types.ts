@@ -60,3 +60,12 @@ export type SelectionState =
   | { type: 'node'; nodeId: string }
   | { type: 'edge'; edgeId: string };
 
+/**
+ * Состояние Popover редактирования блока
+ */
+export interface PopoverState {
+  isOpen: boolean;
+  nodeId: string | null;
+  anchorPosition: { x: number; y: number } | null;
+}
+

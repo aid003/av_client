@@ -103,14 +103,11 @@ export async function getConstructorSchema(
  * Валидировать definition скрипта
  */
 export async function validateScriptDefinition(
-  id: string,
-  tenantId: string,
   definition: ScriptDefinition
 ): Promise<ValidationResult> {
   return apiClient.post<ValidationResult, { definition: ScriptDefinition }>(
-    `/api/sales-scripts/${id}/validate`,
-    { definition },
-    { params: { tenantId } }
+    `/api/sales-scripts/validate`,
+    { definition }
   );
 }
 

@@ -14,7 +14,7 @@ import type {
   EdgeConditionType,
   ConstructorSchema,
 } from '@/entities/sales-script';
-import type { ScriptNode, ScriptFlowEdge, SelectionState } from './types';
+import type { ScriptNode, ScriptFlowEdge, SelectionState, PopoverState } from './types';
 import {
   definitionToFlow,
   flowToDefinition,
@@ -42,6 +42,7 @@ interface ScriptEditorState {
 
   // Состояние UI
   selection: SelectionState;
+  popover: PopoverState;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
@@ -54,6 +55,11 @@ interface ScriptEditorState {
     description: string | undefined,
     isActive: boolean,
     definition: ScriptDefinition
+  ) => void;
+  initFromNewScript: (
+    name: string,
+    description: string | undefined,
+    isActive: boolean
   ) => void;
   setConstructorSchema: (schema: ConstructorSchema) => void;
   reset: () => void;
@@ -83,6 +89,10 @@ interface ScriptEditorState {
   setSelection: (selection: SelectionState) => void;
   clearSelection: () => void;
 
+  // Actions - Popover
+  openPopover: (nodeId: string, position: { x: number; y: number }) => void;
+  closePopover: () => void;
+
   // Actions - Script metadata
   setScriptName: (name: string) => void;
   setScriptDescription: (description: string) => void;
@@ -109,6 +119,11 @@ const initialState = {
   slots: [],
   constructorSchema: null,
   selection: { type: 'none' } as SelectionState,
+  popover: {
+    isOpen: false,
+    nodeId: null,
+    anchorPosition: null,
+  } as PopoverState,
   isDirty: false,
   isLoading: false,
   isSaving: false,
@@ -132,6 +147,25 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       nodes,
       edges,
       slots: definition.meta.slots || [],
+      selection: { type: 'none' },
+      isDirty: false,
+      error: null,
+    });
+  },
+
+  initFromNewScript: (name, description, isActive) => {
+    // Создаем только START блок для нового скрипта
+    const startBlock = createEmptyBlock('START', { x: 100, y: 200 });
+    const startNode = blockToNode(startBlock);
+
+    set({
+      scriptId: null,
+      scriptName: name,
+      scriptDescription: description || '',
+      isActive,
+      nodes: [startNode],
+      edges: [],
+      slots: [],
       selection: { type: 'none' },
       isDirty: false,
       error: null,
@@ -190,6 +224,11 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
         state.selection.type === 'node' && state.selection.nodeId === nodeId
           ? { type: 'none' }
           : state.selection,
+      // Закрываем popover если удаляется открытый блок
+      popover:
+        state.popover.nodeId === nodeId
+          ? { isOpen: false, nodeId: null, anchorPosition: null }
+          : state.popover,
     }));
   },
 
@@ -321,6 +360,30 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   },
 
   // ========================================
+  // Popover
+  // ========================================
+
+  openPopover: (nodeId, position) => {
+    set({
+      popover: {
+        isOpen: true,
+        nodeId,
+        anchorPosition: position,
+      },
+    });
+  },
+
+  closePopover: () => {
+    set({
+      popover: {
+        isOpen: false,
+        nodeId: null,
+        anchorPosition: null,
+      },
+    });
+  },
+
+  // ========================================
   // Script metadata
   // ========================================
 
@@ -396,6 +459,9 @@ export const useScriptEditorSlots = () =>
 export const useScriptEditorSelection = () =>
   useScriptEditorStore((state) => state.selection);
 
+export const usePopoverState = () =>
+  useScriptEditorStore((state) => state.popover);
+
 export const useScriptEditorMeta = () =>
   useScriptEditorStore(
     useShallow((state) => ({
@@ -420,6 +486,7 @@ export const useScriptEditorActions = () =>
   useScriptEditorStore(
     useShallow((state) => ({
       initFromDefinition: state.initFromDefinition,
+      initFromNewScript: state.initFromNewScript,
       setConstructorSchema: state.setConstructorSchema,
       reset: state.reset,
       onNodesChange: state.onNodesChange,
@@ -436,6 +503,8 @@ export const useScriptEditorActions = () =>
       removeSlot: state.removeSlot,
       setSelection: state.setSelection,
       clearSelection: state.clearSelection,
+      openPopover: state.openPopover,
+      closePopover: state.closePopover,
       setScriptName: state.setScriptName,
       setScriptDescription: state.setScriptDescription,
       setLoading: state.setLoading,

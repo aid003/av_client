@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +17,6 @@ import { Textarea } from '@/shared/ui/components/ui/textarea';
 import { Switch } from '@/shared/ui/components/ui/switch';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { Plus } from 'lucide-react';
-import {
-  createSalesScript,
-  useSalesScriptsActions,
-} from '@/entities/sales-script';
-import { createEmptyDefinition } from '@/features/script-editor';
 
 interface CreateSalesScriptButtonProps {
   tenantId: string;
@@ -29,14 +25,12 @@ interface CreateSalesScriptButtonProps {
 export function CreateSalesScriptButton({
   tenantId,
 }: CreateSalesScriptButtonProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { addSalesScript } = useSalesScriptsActions();
 
   const resetForm = () => {
     setName('');
@@ -45,37 +39,27 @@ export function CreateSalesScriptButton({
     setError(null);
   };
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!name.trim()) {
       setError('Пожалуйста, введите название скрипта');
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
-    try {
-      const definition = createEmptyDefinition(
-        name.trim(),
-        description.trim() || undefined
-      );
-      const newScript = await createSalesScript(tenantId, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        isActive,
-        definition,
-      });
+    // Сохраняем данные нового скрипта в localStorage
+    const newScriptData = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      isActive,
+      tenantId,
+    };
 
-      addSalesScript(tenantId, newScript);
-      setIsOpen(false);
-      resetForm();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Ошибка при создании скрипта'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    localStorage.setItem('newScriptData', JSON.stringify(newScriptData));
+
+    // Закрываем диалог и переходим в редактор
+    setIsOpen(false);
+    router.push('/sales-scripts/new');
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -108,11 +92,10 @@ export function CreateSalesScriptButton({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isLoading && name.trim()) {
+                  if (e.key === 'Enter' && name.trim()) {
                     handleCreate();
                   }
                 }}
-                disabled={isLoading}
                 autoFocus
               />
             </div>
@@ -126,7 +109,6 @@ export function CreateSalesScriptButton({
                 placeholder="Краткое описание скрипта"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                disabled={isLoading}
                 rows={3}
               />
             </div>
@@ -137,7 +119,6 @@ export function CreateSalesScriptButton({
                 id="script-active"
                 checked={isActive}
                 onCheckedChange={setIsActive}
-                disabled={isLoading}
               />
             </div>
 
@@ -152,15 +133,14 @@ export function CreateSalesScriptButton({
             <Button
               variant="outline"
               onClick={() => setIsOpen(false)}
-              disabled={isLoading}
             >
               Отмена
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={isLoading || !name.trim()}
+              disabled={!name.trim()}
             >
-              {isLoading ? 'Создание...' : 'Создать'}
+              Перейти к созданию графа
             </Button>
           </DialogFooter>
         </DialogContent>

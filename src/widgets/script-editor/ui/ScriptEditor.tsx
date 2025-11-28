@@ -6,7 +6,6 @@ import {
   EditorCanvas,
   EditorHeader,
   BlocksPalette,
-  PropertiesPanel,
   useScriptEditorActions,
   useScriptEditorNodes,
 } from '@/features/script-editor';
@@ -20,9 +19,17 @@ import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import type { SalesScript } from '@/entities/sales-script';
 
-interface ScriptEditorProps {
-  script: SalesScript;
+interface NewScriptData {
+  name: string;
+  description?: string;
+  isActive: boolean;
   tenantId: string;
+}
+
+interface ScriptEditorProps {
+  script: SalesScript | null;
+  tenantId: string;
+  newScriptData?: NewScriptData;
   isLoading?: boolean;
   error?: string | null;
 }
@@ -30,15 +37,17 @@ interface ScriptEditorProps {
 export function ScriptEditor({
   script,
   tenantId,
+  newScriptData,
   isLoading,
   error,
 }: ScriptEditorProps) {
-  const { initFromDefinition, reset } = useScriptEditorActions();
+  const { initFromDefinition, initFromNewScript, reset } = useScriptEditorActions();
   const nodes = useScriptEditorNodes();
 
   // Инициализация store при монтировании
   useEffect(() => {
     if (script && script.definition) {
+      // Инициализация существующего скрипта
       initFromDefinition(
         script.id,
         script.name,
@@ -46,13 +55,20 @@ export function ScriptEditor({
         script.isActive,
         script.definition
       );
+    } else if (newScriptData) {
+      // Инициализация нового скрипта
+      initFromNewScript(
+        newScriptData.name,
+        newScriptData.description,
+        newScriptData.isActive
+      );
     }
 
     // Очистка при размонтировании
     return () => {
       reset();
     };
-  }, [script, initFromDefinition, reset]);
+  }, [script, newScriptData, initFromDefinition, initFromNewScript, reset]);
 
   // Проверяем есть ли блок START
   const hasStartBlock = nodes.some((n) => n.data.blockType === 'START');
@@ -80,9 +96,9 @@ export function ScriptEditor({
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left Panel - Blocks Palette */}
           <ResizablePanel
-            defaultSize={15}
-            minSize={12}
-            maxSize={25}
+            defaultSize={20}
+            minSize={15}
+            maxSize={30}
             className="border-r"
           >
             <BlocksPalette hasStartBlock={hasStartBlock} />
@@ -90,21 +106,9 @@ export function ScriptEditor({
 
           <ResizableHandle withHandle />
 
-          {/* Center - Canvas */}
-          <ResizablePanel defaultSize={60} minSize={40}>
+          {/* Center - Canvas (теперь занимает всю оставшуюся ширину) */}
+          <ResizablePanel defaultSize={80} minSize={70}>
             <EditorCanvas />
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {/* Right Panel - Properties */}
-          <ResizablePanel
-            defaultSize={25}
-            minSize={20}
-            maxSize={35}
-            className="border-l"
-          >
-            <PropertiesPanel />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

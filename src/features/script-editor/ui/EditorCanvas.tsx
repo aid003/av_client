@@ -14,6 +14,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { nodeTypes } from './nodes';
+import { BlockEditPopover } from './BlockEditPopover';
 import {
   useScriptEditorNodes,
   useScriptEditorEdges,
@@ -31,6 +32,8 @@ export function EditorCanvas() {
     onConnect,
     setSelection,
     addNode,
+    openPopover,
+    closePopover,
   } = useScriptEditorActions();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -43,10 +46,23 @@ export function EditorCanvas() {
 
   // Обработчик клика по ноде
   const onNodeClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
+    (event, node) => {
+      // Находим DOM элемент блока
+      const nodeElement = (event.target as HTMLElement).closest('.react-flow__node');
+
+      if (nodeElement) {
+        const rect = nodeElement.getBoundingClientRect();
+
+        // Открываем popover справа от блока
+        openPopover(node.id, {
+          x: rect.right + 10,
+          y: rect.top,
+        });
+      }
+
       setSelection({ type: 'node', nodeId: node.id });
     },
-    [setSelection]
+    [openPopover, setSelection]
   );
 
   // Обработчик клика по ребру
@@ -60,7 +76,13 @@ export function EditorCanvas() {
   // Обработчик клика по пустому пространству
   const onPaneClick = useCallback(() => {
     setSelection({ type: 'none' });
-  }, [setSelection]);
+    closePopover();
+  }, [setSelection, closePopover]);
+
+  // Обработчик начала перетаскивания ноды
+  const onNodeDragStart = useCallback(() => {
+    closePopover();
+  }, [closePopover]);
 
   // Drag & Drop обработчики
   const onDragOver = useCallback((event: DragEvent) => {
@@ -98,6 +120,7 @@ export function EditorCanvas() {
         onConnect={onConnect}
         onInit={onInit}
         onNodeClick={onNodeClick}
+        onNodeDragStart={onNodeDragStart}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         onDragOver={onDragOver}
@@ -132,6 +155,9 @@ export function EditorCanvas() {
           className="bg-background border rounded-lg shadow-md"
         />
       </ReactFlow>
+
+      {/* Popover для редактирования блоков */}
+      <BlockEditPopover />
     </div>
   );
 }
