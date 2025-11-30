@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/shared/ui/components/ui/button';
@@ -12,6 +12,7 @@ import {
   usePopoverState,
   useScriptEditorSlots,
   useScriptEditorActions,
+  useScriptEditorStore,
 } from '../model/store';
 import {
   MessageBlockForm,
@@ -34,12 +35,14 @@ export function BlockEditPopover() {
   const slots = useScriptEditorSlots();
   const {
     closePopover,
-    getSelectedNode,
     updateNodeData,
     deleteNode,
   } = useScriptEditorActions();
 
-  const selectedNode = getSelectedNode();
+  const selectedNode = useScriptEditorStore((state) => {
+    if (!state.popover.nodeId) return null;
+    return state.nodes.find(n => n.id === state.popover.nodeId) || null;
+  });
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Закрытие при клике вне popover
@@ -47,6 +50,19 @@ export function BlockEditPopover() {
     if (!popover.isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+
+      // Игнорируем клики внутри диалогов и Radix UI popup-элементов
+      if (
+        target.closest('[role="dialog"]') ||
+        target.closest('[data-radix-popper-content-wrapper]') ||
+        target.closest('[data-radix-select-content]') ||
+        target.closest('[data-radix-dropdown-menu-content]') ||
+        target.closest('[data-radix-popover-content]')
+      ) {
+        return;
+      }
+
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
         closePopover();
       }
@@ -85,8 +101,17 @@ export function BlockEditPopover() {
   const isStartNode = blockType === 'START';
 
   const handleUpdate = (data: Partial<typeof selectedNode.data>) => {
+    if (!selectedNode) return;
     updateNodeData(selectedNode.id, data);
   };
+
+  const handleConfigUpdate = useCallback((configUpdates: Partial<any>) => {
+    if (!selectedNode) return;
+
+    updateNodeData(selectedNode.id, {
+      config: { ...selectedNode.data.config, ...configUpdates }
+    });
+  }, [selectedNode, updateNodeData]);
 
   const handleDelete = () => {
     deleteNode(selectedNode.id);
@@ -154,9 +179,7 @@ export function BlockEditPopover() {
           {blockType === 'MESSAGE' && (
             <MessageBlockForm
               config={selectedNode.data.config as MessageBlockConfig}
-              onUpdate={(config) =>
-                handleUpdate({ config: { ...selectedNode.data.config, ...config } })
-              }
+              onUpdate={handleConfigUpdate}
             />
           )}
 
@@ -164,36 +187,28 @@ export function BlockEditPopover() {
             <QuestionBlockForm
               config={selectedNode.data.config as QuestionBlockConfig}
               slots={slots}
-              onUpdate={(config) =>
-                handleUpdate({ config: { ...selectedNode.data.config, ...config } })
-              }
+              onUpdate={handleConfigUpdate}
             />
           )}
 
           {blockType === 'ROUTER' && (
             <RouterBlockForm
               config={selectedNode.data.config as RouterBlockConfig}
-              onUpdate={(config) =>
-                handleUpdate({ config: { ...selectedNode.data.config, ...config } })
-              }
+              onUpdate={handleConfigUpdate}
             />
           )}
 
           {blockType === 'LLM_REPLY' && (
             <LLMReplyBlockForm
               config={selectedNode.data.config as LLMReplyBlockConfig}
-              onUpdate={(config) =>
-                handleUpdate({ config: { ...selectedNode.data.config, ...config } })
-              }
+              onUpdate={handleConfigUpdate}
             />
           )}
 
           {blockType === 'END' && (
             <EndBlockForm
               config={selectedNode.data.config as EndBlockConfig}
-              onUpdate={(config) =>
-                handleUpdate({ config: { ...selectedNode.data.config, ...config } })
-              }
+              onUpdate={handleConfigUpdate}
             />
           )}
         </div>

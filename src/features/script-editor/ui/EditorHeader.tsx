@@ -8,6 +8,7 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Database,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Badge } from '@/shared/ui/components/ui/badge';
@@ -24,6 +25,7 @@ import {
   useSalesScriptsActions,
   type ValidationResult,
 } from '@/entities/sales-script';
+import { SlotsManagementDialog } from './dialogs/SlotsManagementDialog';
 
 interface EditorHeaderProps {
   tenantId: string;
@@ -38,6 +40,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [showSlotsDialog, setShowSlotsDialog] = useState(false);
 
   useEffect(() => {
     if (validationResult?.valid) {
@@ -177,6 +180,17 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* Slots management button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSlotsDialog(true)}
+          title="Управление слотами"
+        >
+          <Database className="w-4 h-4 mr-2" />
+          Слоты
+        </Button>
+
         {/* Validation result */}
         {validationResult && (
           <div className="flex items-center gap-1.5 mr-2">
@@ -234,6 +248,12 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
           {meta.scriptId === null ? 'Создать скрипт' : 'Сохранить'}
         </Button>
       </div>
+
+      {/* Slots management dialog */}
+      <SlotsManagementDialog
+        open={showSlotsDialog}
+        onOpenChange={setShowSlotsDialog}
+      />
     </header>
   );
 }

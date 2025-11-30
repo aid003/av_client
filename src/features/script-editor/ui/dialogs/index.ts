@@ -1,0 +1,1 @@
+export { SlotsManagementDialog } from './SlotsManagementDialog';
