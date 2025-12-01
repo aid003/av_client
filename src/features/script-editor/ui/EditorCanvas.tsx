@@ -7,6 +7,7 @@ import {
   Controls,
   MiniMap,
   BackgroundVariant,
+  useOnViewportChange,
   type ReactFlowInstance,
   type NodeMouseHandler,
   type EdgeMouseHandler,
@@ -38,6 +39,13 @@ export function EditorCanvas() {
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance<ScriptNode, ScriptFlowEdge> | null>(null);
+
+  // Закрываем попап при движении/зуме канваса
+  useOnViewportChange({
+    onStart: () => {
+      closePopover();
+    },
+  });
 
   // Обработчик инициализации React Flow
   const onInit = useCallback((instance: ReactFlowInstance<ScriptNode, ScriptFlowEdge>) => {

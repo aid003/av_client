@@ -93,6 +93,55 @@ export function BlockEditPopover() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [popover.isOpen, closePopover]);
 
+  // Корректировка позиции при выходе за границы viewport
+  useEffect(() => {
+    if (!popover.isOpen || !popoverRef.current || !popover.anchorPosition) return;
+
+    // Небольшая задержка для получения размеров после рендера
+    const timer = setTimeout(() => {
+      if (!popoverRef.current) return;
+
+      const rect = popoverRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      let adjustedX = popover.anchorPosition.x;
+      let adjustedY = popover.anchorPosition.y;
+
+      // Проверка вертикального переполнения
+      if (rect.bottom > viewportHeight) {
+        // Попап выходит за нижнюю границу
+        adjustedY = Math.max(20, viewportHeight - rect.height - 20);
+      }
+
+      // Проверка горизонтального переполнения
+      if (rect.right > viewportWidth) {
+        // Попап выходит за правую границу, сдвигаем влево
+        adjustedX = Math.max(20, viewportWidth - rect.width - 20);
+      }
+
+      // Применяем корректировки если нужно
+      if (adjustedX !== popover.anchorPosition.x || adjustedY !== popover.anchorPosition.y) {
+        popoverRef.current.style.left = `${adjustedX}px`;
+        popoverRef.current.style.top = `${adjustedY}px`;
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [popover.isOpen, popover.anchorPosition]);
+
+  // Закрывать попап при изменении размера окна
+  useEffect(() => {
+    if (!popover.isOpen) return;
+
+    const handleResize = () => {
+      closePopover();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [popover.isOpen, closePopover]);
+
   if (!popover.isOpen || !selectedNode || !popover.anchorPosition) {
     return null;
   }

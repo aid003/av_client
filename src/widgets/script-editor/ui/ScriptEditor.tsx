@@ -8,12 +8,9 @@ import {
   BlocksPalette,
   useScriptEditorActions,
   useScriptEditorNodes,
+  useScriptEditorStore,
 } from '@/features/script-editor';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/shared/ui/components/ui/resizable';
+import { cn } from '@/shared/lib/utils';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -73,6 +70,9 @@ export function ScriptEditor({
   // Проверяем есть ли блок START
   const hasStartBlock = nodes.some((n) => n.data.blockType === 'START');
 
+  // Состояние панели блоков
+  const isPaletteCollapsed = useScriptEditorStore((state) => state.isPaletteCollapsed);
+
   if (isLoading) {
     return <ScriptEditorSkeleton />;
   }
@@ -93,24 +93,25 @@ export function ScriptEditor({
       <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
         <EditorHeader tenantId={tenantId} />
 
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <div className="flex flex-1">
           {/* Left Panel - Blocks Palette */}
-          <ResizablePanel
-            defaultSize={20}
-            minSize={15}
-            maxSize={30}
-            className="border-r"
+          <div
+            className={cn(
+              'border-r transition-all duration-300 ease-in-out',
+              isPaletteCollapsed ? 'w-[64px]' : 'w-[280px]'
+            )}
           >
-            <BlocksPalette hasStartBlock={hasStartBlock} />
-          </ResizablePanel>
+            <BlocksPalette
+              hasStartBlock={hasStartBlock}
+              isCollapsed={isPaletteCollapsed}
+            />
+          </div>
 
-          <ResizableHandle withHandle />
-
-          {/* Center - Canvas (теперь занимает всю оставшуюся ширину) */}
-          <ResizablePanel defaultSize={80} minSize={70}>
+          {/* Center - Canvas */}
+          <div className="flex-1">
             <EditorCanvas />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </div>
     </ReactFlowProvider>
   );
@@ -133,18 +134,13 @@ function ScriptEditorSkeleton() {
 
       {/* Content skeleton */}
       <div className="flex flex-1">
-        <div className="w-[15%] border-r p-4 space-y-3">
+        <div className="w-[280px] border-r p-4 space-y-3">
           <Skeleton className="h-4 w-16" />
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
         <div className="flex-1 bg-muted/30" />
-        <div className="w-[25%] border-l p-4 space-y-4">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </div>
       </div>
     </div>
   );

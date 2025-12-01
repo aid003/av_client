@@ -43,6 +43,7 @@ interface ScriptEditorState {
   // Состояние UI
   selection: SelectionState;
   popover: PopoverState;
+  isPaletteCollapsed: boolean;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
@@ -93,6 +94,9 @@ interface ScriptEditorState {
   openPopover: (nodeId: string, position: { x: number; y: number }) => void;
   closePopover: () => void;
 
+  // Actions - Palette
+  togglePaletteCollapse: () => void;
+
   // Actions - Script metadata
   setScriptName: (name: string) => void;
   setScriptDescription: (description: string) => void;
@@ -124,6 +128,7 @@ const initialState = {
     nodeId: null,
     anchorPosition: null,
   } as PopoverState,
+  isPaletteCollapsed: false,
   isDirty: false,
   isLoading: false,
   isSaving: false,
@@ -185,9 +190,14 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   // ========================================
 
   onNodesChange: (changes) => {
+    // Проверяем есть ли значимые изменения (не selection и не dimensions)
+    const hasSignificantChanges = changes.some(
+      (change) => change.type !== 'select' && change.type !== 'dimensions'
+    );
+
     set((state) => ({
       nodes: applyNodeChanges(changes, state.nodes),
-      isDirty: true,
+      isDirty: hasSignificantChanges ? true : state.isDirty,
     }));
   },
 
@@ -237,9 +247,14 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   // ========================================
 
   onEdgesChange: (changes) => {
+    // Проверяем есть ли значимые изменения (не select)
+    const hasSignificantChanges = changes.some(
+      (change) => change.type !== 'select'
+    );
+
     set((state) => ({
       edges: applyEdgeChanges(changes, state.edges),
-      isDirty: true,
+      isDirty: hasSignificantChanges ? true : state.isDirty,
     }));
   },
 
@@ -384,6 +399,16 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   },
 
   // ========================================
+  // Palette
+  // ========================================
+
+  togglePaletteCollapse: () => {
+    set((state) => ({
+      isPaletteCollapsed: !state.isPaletteCollapsed,
+    }));
+  },
+
+  // ========================================
   // Script metadata
   // ========================================
 
@@ -505,6 +530,7 @@ export const useScriptEditorActions = () =>
       clearSelection: state.clearSelection,
       openPopover: state.openPopover,
       closePopover: state.closePopover,
+      togglePaletteCollapse: state.togglePaletteCollapse,
       setScriptName: state.setScriptName,
       setScriptDescription: state.setScriptDescription,
       setLoading: state.setLoading,

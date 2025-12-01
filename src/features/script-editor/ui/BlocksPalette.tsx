@@ -8,8 +8,12 @@ import {
   GitBranch,
   Sparkles,
   Square,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
+import { Button } from '@/shared/ui/components/ui/button';
+import { useScriptEditorActions } from '../model/store';
 import type { ScriptBlockType } from '@/entities/sales-script';
 
 interface BlockTypeItem {
@@ -69,20 +73,49 @@ const BLOCK_TYPES: BlockTypeItem[] = [
 
 interface BlocksPaletteProps {
   hasStartBlock?: boolean;
+  isCollapsed?: boolean;
 }
 
-export function BlocksPalette({ hasStartBlock = false }: BlocksPaletteProps) {
+export function BlocksPalette({ hasStartBlock = false, isCollapsed = false }: BlocksPaletteProps) {
+  const { togglePaletteCollapse } = useScriptEditorActions();
+
   const onDragStart = (event: DragEvent, type: ScriptBlockType) => {
     event.dataTransfer.setData('application/reactflow-type', type);
     event.dataTransfer.effectAllowed = 'move';
   };
 
   return (
-    <div className="p-4 space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-        Блоки
-      </h3>
-      <div className="space-y-1.5">
+    <div className="h-full flex flex-col">
+      {/* Header with toggle button */}
+      <div className={cn(
+        "flex items-center border-b",
+        isCollapsed ? "p-2 justify-center" : "p-3 justify-between"
+      )}>
+        {!isCollapsed && (
+          <h3 className="text-sm font-semibold text-muted-foreground">
+            Блоки
+          </h3>
+        )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={togglePaletteCollapse}
+          title={isCollapsed ? "Развернуть" : "Свернуть"}
+          className={!isCollapsed ? "ml-auto" : ""}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Blocks list */}
+      <div className={cn(
+        "p-3 space-y-1.5 overflow-y-auto",
+        isCollapsed ? "px-2" : "px-4"
+      )}>
         {BLOCK_TYPES.map((block) => {
           const isDisabled = block.disabled || (block.type === 'START' && hasStartBlock);
 
@@ -91,10 +124,12 @@ export function BlocksPalette({ hasStartBlock = false }: BlocksPaletteProps) {
               key={block.type}
               draggable={!isDisabled}
               onDragStart={(e) => onDragStart(e, block.type)}
+              title={isCollapsed ? `${block.label} - ${block.description}` : undefined}
               className={cn(
-                'flex items-center gap-3 p-2.5 rounded-lg border cursor-grab transition-all',
+                'flex items-center rounded-lg border cursor-grab transition-all',
                 'hover:bg-muted/50 hover:border-primary/50',
                 'active:cursor-grabbing',
+                isCollapsed ? 'p-2 justify-center' : 'gap-3 p-2.5',
                 isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:border-border'
               )}
             >
@@ -106,22 +141,29 @@ export function BlocksPalette({ hasStartBlock = false }: BlocksPaletteProps) {
               >
                 {block.icon}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{block.label}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {block.description}
+
+              {/* Text - only show when expanded */}
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{block.label}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {block.description}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      <div className="pt-4 mt-4 border-t">
-        <p className="text-xs text-muted-foreground">
-          Перетащите блок на канвас, чтобы добавить его в скрипт
-        </p>
-      </div>
+      {/* Helper text - only show when expanded */}
+      {!isCollapsed && (
+        <div className="p-4 mt-auto border-t">
+          <p className="text-xs text-muted-foreground">
+            Перетащите блок на канвас, чтобы добавить его в скрипт
+          </p>
+        </div>
+      )}
     </div>
   );
 }

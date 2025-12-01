@@ -26,6 +26,7 @@ import {
   type ValidationResult,
 } from '@/entities/sales-script';
 import { SlotsManagementDialog } from './dialogs/SlotsManagementDialog';
+import { UnsavedChangesDialog } from './dialogs/UnsavedChangesDialog';
 
 interface EditorHeaderProps {
   tenantId: string;
@@ -41,6 +42,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showSlotsDialog, setShowSlotsDialog] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   useEffect(() => {
     if (validationResult?.valid) {
@@ -54,11 +56,14 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
   const handleBack = () => {
     if (status.isDirty) {
-      const confirmed = window.confirm(
-        'У вас есть несохранённые изменения. Вы уверены, что хотите выйти?'
-      );
-      if (!confirmed) return;
+      setShowUnsavedDialog(true);
+    } else {
+      router.push('/sales-scripts');
     }
+  };
+
+  const handleConfirmExit = () => {
+    setShowUnsavedDialog(false);
     router.push('/sales-scripts');
   };
 
@@ -180,17 +185,6 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Slots management button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSlotsDialog(true)}
-          title="Управление слотами"
-        >
-          <Database className="w-4 h-4 mr-2" />
-          Слоты
-        </Button>
-
         {/* Validation result */}
         {validationResult && (
           <div className="flex items-center gap-1.5 mr-2">
@@ -213,6 +207,17 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
             ) : null}
           </div>
         )}
+
+        {/* Slots management button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSlotsDialog(true)}
+          title="Управление слотами"
+        >
+          <Database className="w-4 h-4 mr-2" />
+          Слоты
+        </Button>
 
         {/* Error message */}
         {status.error && (
