@@ -39,6 +39,7 @@ export interface QuestionBlockConfig {
   text: string;
   required?: boolean;
   hintForLLM?: string;
+  maxRetries?: number;
 }
 
 export interface RouterBlockConfig {

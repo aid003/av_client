@@ -11,6 +11,8 @@ import {
   useScriptEditorSelection,
   useScriptEditorMeta,
   useScriptEditorSlots,
+  useScriptEditorNodes,
+  useScriptEditorEdges,
   useScriptEditorActions,
 } from '../model/store';
 import type {
@@ -190,6 +192,8 @@ function NodePropertiesForm({
   onUpdate,
   onDelete,
 }: NodePropertiesFormProps) {
+  const nodes = useScriptEditorNodes();
+  const edges = useScriptEditorEdges();
   const blockType = node.data.blockType;
   const isStartNode = blockType === 'START';
 
@@ -224,6 +228,10 @@ function NodePropertiesForm({
         {blockType === 'MESSAGE' && (
           <MessageBlockForm
             config={node.data.config as MessageBlockConfig}
+            currentNodeId={node.id}
+            nodes={nodes}
+            edges={edges}
+            slots={slots}
             onUpdate={(config) =>
               onUpdate({ config: { ...node.data.config, ...config } })
             }

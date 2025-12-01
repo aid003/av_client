@@ -30,6 +30,11 @@ export const QuestionNode = memo(function QuestionNode({
             {config.slot}
           </Badge>
         )}
+        {config.maxRetries !== undefined && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            max={config.maxRetries}
+          </Badge>
+        )}
         {config.text && (
           <div className="text-xs text-muted-foreground line-clamp-2">
             {config.text}

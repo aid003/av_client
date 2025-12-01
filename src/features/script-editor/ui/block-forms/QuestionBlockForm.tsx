@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/components/ui/button';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
 import { Switch } from '@/shared/ui/components/ui/switch';
+import { Slider } from '@/shared/ui/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -84,9 +85,34 @@ export function QuestionBlockForm({
         <Switch
           id="question-required"
           checked={config.required || false}
-          onCheckedChange={(checked) => onUpdate({ required: checked })}
+          onCheckedChange={(checked) => {
+            if (!checked) {
+              // Clear maxRetries when required becomes false
+              onUpdate({ required: checked, maxRetries: undefined });
+            } else {
+              onUpdate({ required: checked });
+            }
+          }}
         />
       </div>
+
+      {config.required && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Макс. попыток переспроса: {config.maxRetries || '—'}</Label>
+          </div>
+          <Slider
+            value={[config.maxRetries || 3]}
+            onValueChange={(values: number[]) => onUpdate({ maxRetries: values[0] })}
+            min={1}
+            max={10}
+            step={1}
+          />
+          <div className="text-xs text-muted-foreground">
+            От 1 до 10 попыток
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="question-hint">Подсказка для ИИ</Label>
