@@ -160,7 +160,7 @@ export function BlockEditPopover() {
       </div>
 
       {/* Content */}
-      <ScrollArea className="max-h-[500px]">
+      <ScrollArea className="max-h-[60vh] overflow-auto">
         <div className="p-4 space-y-4">
           {/* Название блока */}
           <div className="space-y-2">

@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/shared/ui/components/ui/select';
 import type { LLMReplyBlockConfig } from '@/entities/sales-script';
+import { DelaySecondsInput } from './DelaySecondsInput';
 
 interface LLMReplyBlockFormProps {
   config: LLMReplyBlockConfig;
@@ -85,6 +86,12 @@ export function LLMReplyBlockForm({ config, onUpdate }: LLMReplyBlockFormProps) 
           max={2000}
         />
       </div>
+
+      {/* Delay configuration */}
+      <DelaySecondsInput
+        value={config.delaySeconds}
+        onChange={(value) => onUpdate({ delaySeconds: value })}
+      />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from '@/shared/ui/components/ui/select';
 import { SlotsManagementDialog } from '../dialogs/SlotsManagementDialog';
 import type { QuestionBlockConfig, ScriptSlot } from '@/entities/sales-script';
+import { DelaySecondsInput } from './DelaySecondsInput';
 
 interface QuestionBlockFormProps {
   config: QuestionBlockConfig;
@@ -124,6 +125,12 @@ export function QuestionBlockForm({
           rows={2}
         />
       </div>
+
+      {/* Delay configuration */}
+      <DelaySecondsInput
+        value={config.delaySeconds}
+        onChange={(value) => onUpdate({ delaySeconds: value })}
+      />
 
       <SlotsManagementDialog
         open={showSlotsDialog}

@@ -9,6 +9,7 @@ import { Card } from '@/shared/ui/components/ui/card';
 import type { MessageBlockConfig, ScriptSlot } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge } from '../../model/types';
 import { getAvailableSlotsForNode } from '../../model/graph-utils';
+import { DelaySecondsInput } from './DelaySecondsInput';
 
 interface MessageBlockFormProps {
   config: MessageBlockConfig;
@@ -108,6 +109,12 @@ export function MessageBlockForm({
           </div>
         </Card>
       )}
+
+      {/* Delay configuration */}
+      <DelaySecondsInput
+        value={config.delaySeconds}
+        onChange={(value) => onUpdate({ delaySeconds: value })}
+      />
     </div>
   );
 }

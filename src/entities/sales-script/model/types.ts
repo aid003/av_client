@@ -32,6 +32,7 @@ export interface StartBlockConfig {
 export interface MessageBlockConfig {
   text: string;
   enableTemplating?: boolean;
+  delaySeconds?: number;
 }
 
 export interface QuestionBlockConfig {
@@ -40,6 +41,7 @@ export interface QuestionBlockConfig {
   required?: boolean;
   hintForLLM?: string;
   maxRetries?: number;
+  delaySeconds?: number;
 }
 
 export interface RouterBlockConfig {
@@ -53,6 +55,7 @@ export interface LLMReplyBlockConfig {
   maxTokens?: number;
   temperature?: number;
   style?: LLMReplyStyle;
+  delaySeconds?: number;
 }
 
 export interface EndBlockConfig {
