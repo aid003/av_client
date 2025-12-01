@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, type DragEvent } from 'react';
+import { useCallback, useEffect, useRef, type DragEvent } from 'react';
 import {
   ReactFlow,
   Background,
@@ -35,6 +35,8 @@ export function EditorCanvas() {
     addNode,
     openPopover,
     closePopover,
+    copySelectedNode,
+    pasteNode,
   } = useScriptEditorActions();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -61,11 +63,27 @@ export function EditorCanvas() {
       if (nodeElement) {
         const rect = nodeElement.getBoundingClientRect();
 
-        // Открываем popover справа от блока
-        openPopover(node.id, {
-          x: rect.right + 10,
-          y: rect.top,
-        });
+        // Вычисляем позицию с учетом viewport
+        const popoverWidth = 380; // Ширина попапа из BlockEditPopover
+        const popoverHeight = 400; // Примерная высота (или можем использовать max-h-[60vh])
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        let x = rect.right + 10; // Справа от блока
+        let y = rect.top; // Сверху
+
+        // Проверяем горизонтальное переполнение
+        if (x + popoverWidth > viewportWidth) {
+          x = rect.left - popoverWidth - 10; // Слева от блока
+        }
+
+        // Проверяем вертикальное переполнение
+        const estimatedHeight = Math.min(popoverHeight, viewportHeight * 0.6); // 60vh
+        if (y + estimatedHeight > viewportHeight) {
+          y = Math.max(20, viewportHeight - estimatedHeight - 20);
+        }
+
+        openPopover(node.id, { x, y });
       }
 
       setSelection({ type: 'node', nodeId: node.id });
@@ -117,6 +135,33 @@ export function EditorCanvas() {
     },
     [addNode]
   );
+
+  // Обработчик клавиатуры для копирования/вставки
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Проверяем Ctrl/Cmd модификатор
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const isModifier = isMac ? e.metaKey : e.ctrlKey;
+      if (!isModifier) return;
+
+      // Игнорируем если фокус в input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        copySelectedNode();
+      } else if (e.key === 'v' || e.key === 'V') {
+        e.preventDefault();
+        pasteNode();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [copySelectedNode, pasteNode]);
 
   return (
     <div ref={reactFlowWrapper} className="w-full h-full">

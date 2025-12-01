@@ -259,6 +259,13 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
         open={showSlotsDialog}
         onOpenChange={setShowSlotsDialog}
       />
+
+      {/* Unsaved changes dialog */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onOpenChange={setShowUnsavedDialog}
+        onConfirm={handleConfirmExit}
+      />
     </header>
   );
 }

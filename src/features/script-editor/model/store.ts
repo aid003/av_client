@@ -20,6 +20,7 @@ import {
   flowToDefinition,
   createEmptyBlock,
   generateEdgeId,
+  generateBlockId,
   blockToNode,
 } from './converters';
 
@@ -44,6 +45,7 @@ interface ScriptEditorState {
   selection: SelectionState;
   popover: PopoverState;
   isPaletteCollapsed: boolean;
+  copiedNode: ScriptNode | null;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
@@ -90,6 +92,10 @@ interface ScriptEditorState {
   setSelection: (selection: SelectionState) => void;
   clearSelection: () => void;
 
+  // Actions - Copy/Paste
+  copySelectedNode: () => void;
+  pasteNode: () => void;
+
   // Actions - Popover
   openPopover: (nodeId: string, position: { x: number; y: number }) => void;
   closePopover: () => void;
@@ -129,6 +135,7 @@ const initialState = {
     anchorPosition: null,
   } as PopoverState,
   isPaletteCollapsed: false,
+  copiedNode: null,
   isDirty: false,
   isLoading: false,
   isSaving: false,
@@ -375,6 +382,51 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   },
 
   // ========================================
+  // Copy/Paste
+  // ========================================
+
+  copySelectedNode: () => {
+    const state = get();
+    if (state.selection.type !== 'node') return;
+
+    const nodeToCopy = state.nodes.find((n) => n.id === state.selection.nodeId);
+    if (!nodeToCopy) return;
+
+    set({ copiedNode: nodeToCopy });
+  },
+
+  pasteNode: () => {
+    const state = get();
+    if (!state.copiedNode) return;
+
+    const newBlockId = generateBlockId(state.copiedNode.data.blockType);
+
+    // Глубокое копирование config
+    const newConfig = JSON.parse(JSON.stringify(state.copiedNode.data.config));
+
+    // Создаем новый узел со смещением
+    const newNode: ScriptNode = {
+      ...state.copiedNode,
+      id: newBlockId,
+      position: {
+        x: state.copiedNode.position.x + 50,
+        y: state.copiedNode.position.y + 50,
+      },
+      data: {
+        ...state.copiedNode.data,
+        blockId: newBlockId,
+        config: newConfig,
+      },
+    };
+
+    set((state) => ({
+      nodes: [...state.nodes, newNode],
+      isDirty: true,
+      selection: { type: 'node', nodeId: newBlockId },
+    }));
+  },
+
+  // ========================================
   // Popover
   // ========================================
 
@@ -528,6 +580,8 @@ export const useScriptEditorActions = () =>
       removeSlot: state.removeSlot,
       setSelection: state.setSelection,
       clearSelection: state.clearSelection,
+      copySelectedNode: state.copySelectedNode,
+      pasteNode: state.pasteNode,
       openPopover: state.openPopover,
       closePopover: state.closePopover,
       togglePaletteCollapse: state.togglePaletteCollapse,
