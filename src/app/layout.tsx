@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import "@/shared/ui/globals.css";
-import { TelegramProvider } from "@/shared/providers/TelegramProvider";
-import { ThemeProvider } from "@/shared/providers/ThemeProvider";
-import { AuthProxy } from "@/shared/providers/AuthProxy";
-import { ErudaDevTools } from "@/shared/providers/ErudaDevTools";
-import { SidebarProvider, SidebarTrigger } from "@/shared/ui/components/ui/sidebar";
-import { AppSidebar } from "@/shared/ui/components/app-sidebar";
+import { Providers } from "@/shared/providers/Providers";
 
 export const metadata: Metadata = {
   title: "app",
@@ -20,22 +15,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
-        {process.env.NODE_ENV === 'development' ? <ErudaDevTools /> : null}
-        <TelegramProvider>
-          <ThemeProvider>
-            <AuthProxy>
-              <SidebarProvider>
-                <AppSidebar />
-                <main className="flex-1">
-                  <div className="p-2">
-                    <SidebarTrigger />
-                  </div>
-                  {children}
-                </main>
-              </SidebarProvider>
-            </AuthProxy>
-          </ThemeProvider>
-        </TelegramProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

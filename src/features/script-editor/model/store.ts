@@ -387,9 +387,10 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
 
   copySelectedNode: () => {
     const state = get();
-    if (state.selection.type !== 'node') return;
+    const selection = state.selection;
+    if (selection.type !== 'node') return;
 
-    const nodeToCopy = state.nodes.find((n) => n.id === state.selection.nodeId);
+    const nodeToCopy = state.nodes.find((n) => n.id === selection.nodeId);
     if (!nodeToCopy) return;
 
     set({ copiedNode: nodeToCopy });

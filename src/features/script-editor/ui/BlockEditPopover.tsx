@@ -97,6 +97,8 @@ export function BlockEditPopover() {
   useEffect(() => {
     if (!popover.isOpen || !popoverRef.current || !popover.anchorPosition) return;
 
+    const anchorPosition = popover.anchorPosition;
+
     // Небольшая задержка для получения размеров после рендера
     const timer = setTimeout(() => {
       if (!popoverRef.current) return;
@@ -105,8 +107,8 @@ export function BlockEditPopover() {
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
 
-      let adjustedX = popover.anchorPosition.x;
-      let adjustedY = popover.anchorPosition.y;
+      let adjustedX = anchorPosition.x;
+      let adjustedY = anchorPosition.y;
 
       // Проверка вертикального переполнения
       if (rect.bottom > viewportHeight) {
@@ -121,7 +123,7 @@ export function BlockEditPopover() {
       }
 
       // Применяем корректировки если нужно
-      if (adjustedX !== popover.anchorPosition.x || adjustedY !== popover.anchorPosition.y) {
+      if (adjustedX !== anchorPosition.x || adjustedY !== anchorPosition.y) {
         popoverRef.current.style.left = `${adjustedX}px`;
         popoverRef.current.style.top = `${adjustedY}px`;
       }
