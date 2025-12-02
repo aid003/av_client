@@ -10,6 +10,7 @@ import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/shared/ui/components/ui/card';
 import { ViewAdKnowledgeBasesDialog } from '@/features/view-ad-knowledge-bases/ui/ViewAdKnowledgeBasesDialog';
 import { useAdKbActions } from '@/entities/ad-knowledge-link/model/store';
+import { useAdScriptBindingActions } from '@/entities/ad-script-binding/model/store';
 
 interface AvitoAdsListProps {
   tenantId: string;
@@ -31,6 +32,7 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
   const [selectedAd, setSelectedAd] = useState<AvitoAd | null>(null);
   const [isKbDialogOpen, setIsKbDialogOpen] = useState(false);
   const { loadLinks } = useAdKbActions();
+  const { loadBindings } = useAdScriptBindingActions();
 
   useEffect(() => {
     loadInitial();
@@ -51,8 +53,9 @@ export function AvitoAdsList({ tenantId }: AvitoAdsListProps) {
     // Загружаем без force — стор сам отфильтрует уже загруженные
     ads.forEach((ad) => {
       loadLinks(ad.id, tenantId);
+      loadBindings(ad.id, tenantId);
     });
-  }, [ads, tenantId, loadLinks]);
+  }, [ads, tenantId, loadLinks, loadBindings]);
 
   if (isLoading) {
     return (

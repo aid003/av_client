@@ -62,10 +62,6 @@ export function DelaySecondsInput({ value, onChange }: DelaySecondsInputProps) {
         />
         <span className="text-sm text-muted-foreground">секунд</span>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        0 = отправить сразу
-      </p>
     </div>
   );
 }
