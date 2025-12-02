@@ -91,7 +91,8 @@ export function QuestionBlockForm({
               // Clear maxRetries when required becomes false
               onUpdate({ required: checked, maxRetries: undefined });
             } else {
-              onUpdate({ required: checked });
+              // Set default maxRetries to 3 when required becomes true
+              onUpdate({ required: checked, maxRetries: 3 });
             }
           }}
         />
