@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { AlertCircle, MessageSquare } from 'lucide-react';
 import {
   useMessagesForChat,
@@ -9,7 +9,10 @@ import {
   useMessagesActions,
   type Chat,
 } from '@/entities/avito-chat';
+import { getLeadByChatId, type Lead } from '@/entities/lead';
+import { LeadChatCard } from '@/widgets/lead-chat-card';
 import { usePolling } from '@/shared/lib/use-polling';
+import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { ItemInfoCard } from './ItemInfoCard';
@@ -35,8 +38,12 @@ export function ChatView({
   const isLoading = useMessagesLoading(chat.id);
   const error = useMessagesError(chat.id);
   const { loadMessages, refreshMessages } = useMessagesActions();
+  const { authData } = useTelegramAuth();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chatLead, setChatLead] = useState<Lead | null>(null);
+
+  const tenantId = authData?.tenant.id;
 
   // Загрузка сообщений при монтировании или изменении chat.id
   useEffect(() => {
@@ -44,6 +51,17 @@ export function ChatView({
       loadMessages(chat.id);
     }
   }, [chat.id, loadMessages]);
+
+  // Load lead by chat
+  useEffect(() => {
+    async function loadChatLead() {
+      if (chat.chatId && tenantId) {
+        const lead = await getLeadByChatId(tenantId, chat.chatId);
+        setChatLead(lead);
+      }
+    }
+    loadChatLead();
+  }, [chat.chatId, tenantId]);
 
   // Polling для автоматического обновления сообщений
   usePolling(
@@ -113,6 +131,13 @@ export function ChatView({
             location={itemInfo.location}
             url={itemInfo.url}
           />
+        </div>
+      )}
+
+      {/* Карточка лида */}
+      {chatLead && (
+        <div className="px-4 py-3 border-b shrink-0">
+          <LeadChatCard lead={chatLead} />
         </div>
       )}
 

@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Loader2,
   Database,
+  Brain,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Badge } from '@/shared/ui/components/ui/badge';
@@ -26,6 +27,7 @@ import {
   type ValidationResult,
 } from '@/entities/sales-script';
 import { SlotsManagementDialog } from './dialogs/SlotsManagementDialog';
+import { LLMSettingsDialog } from './dialogs/LLMSettingsDialog';
 import { UnsavedChangesDialog } from './dialogs/UnsavedChangesDialog';
 
 interface EditorHeaderProps {
@@ -42,10 +44,11 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showSlotsDialog, setShowSlotsDialog] = useState(false);
+  const [showLLMSettingsDialog, setShowLLMSettingsDialog] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   useEffect(() => {
-    if (validationResult?.valid) {
+    if (validationResult) {
       const timer = setTimeout(() => {
         setValidationResult(null);
       }, 3000);
@@ -53,6 +56,16 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
       return () => clearTimeout(timer);
     }
   }, [validationResult]);
+
+  useEffect(() => {
+    if (status.error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [status.error, setError]);
 
   const handleBack = () => {
     if (status.isDirty) {
@@ -70,6 +83,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    setValidationResult(null); // Очищаем результат валидации при сохранении
 
     try {
       const definition = getDefinition();
@@ -185,24 +199,31 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Validation result */}
-        {validationResult && (
+        {/* Validation result or Save error */}
+        {(validationResult || status.error) && (
           <div className="flex items-center gap-1.5 mr-2">
-            {validationResult.valid ? (
-              <>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600 dark:text-green-400">
-                  Скрипт валиден
-                </span>
-              </>
-            ) : validationResult.errors.length > 0 ? (
+            {validationResult ? (
+              validationResult.valid ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600 dark:text-green-400">
+                    Скрипт валиден
+                  </span>
+                </>
+              ) : validationResult.errors.length > 0 ? (
+                <>
+                  <AlertCircle className="w-4 h-4 text-destructive" />
+                  <span className="text-sm text-destructive">
+                    {validationResult.errors.length === 1
+                      ? '1 ошибка'
+                      : `${validationResult.errors.length} ошибок`}
+                  </span>
+                </>
+              ) : null
+            ) : status.error ? (
               <>
                 <AlertCircle className="w-4 h-4 text-destructive" />
-                <span className="text-sm text-destructive">
-                  {validationResult.errors.length === 1
-                    ? '1 ошибка'
-                    : `${validationResult.errors.length} ошибок`}
-                </span>
+                <span className="text-sm text-destructive">{status.error}</span>
               </>
             ) : null}
           </div>
@@ -219,10 +240,16 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
           Слоты
         </Button>
 
-        {/* Error message */}
-        {status.error && (
-          <span className="text-sm text-destructive mr-2">{status.error}</span>
-        )}
+        {/* LLM Settings button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLLMSettingsDialog(true)}
+          title="Настройки LLM"
+        >
+          <Brain className="w-4 h-4 mr-2" />
+          Настройки LLM
+        </Button>
 
         {/* Validate button */}
         <Button
@@ -258,6 +285,12 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
       <SlotsManagementDialog
         open={showSlotsDialog}
         onOpenChange={setShowSlotsDialog}
+      />
+
+      {/* LLM Settings dialog */}
+      <LLMSettingsDialog
+        open={showLLMSettingsDialog}
+        onOpenChange={setShowLLMSettingsDialog}
       />
 
       {/* Unsaved changes dialog */}

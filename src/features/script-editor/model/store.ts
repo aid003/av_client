@@ -13,6 +13,7 @@ import type {
   ScriptBlockType,
   EdgeConditionType,
   ConstructorSchema,
+  LlmScriptSettings,
 } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge, SelectionState, PopoverState } from './types';
 import {
@@ -37,6 +38,16 @@ interface ScriptEditorState {
 
   // Слоты
   slots: ScriptSlot[];
+
+  // LLM настройки
+  llmSettings: LlmScriptSettings | null;
+  autoFillSlotsFromFirstMessage: boolean;
+
+  // Настройки времени прочтения
+  readTiming: {
+    firstMessageDelaySeconds?: number;
+    subsequentMessageDelaySeconds?: number;
+  } | null;
 
   // Схема конструктора
   constructorSchema: ConstructorSchema | null;
@@ -88,6 +99,16 @@ interface ScriptEditorState {
   updateSlot: (slotName: string, updates: Partial<ScriptSlot>) => void;
   removeSlot: (slotName: string) => void;
 
+  // Actions - LLM Settings
+  setLlmSettings: (settings: LlmScriptSettings | null) => void;
+  setAutoFillSlotsFromFirstMessage: (value: boolean) => void;
+
+  // Actions - Read Timing
+  setReadTiming: (readTiming: {
+    firstMessageDelaySeconds?: number;
+    subsequentMessageDelaySeconds?: number;
+  } | null) => void;
+
   // Actions - Selection
   setSelection: (selection: SelectionState) => void;
   clearSelection: () => void;
@@ -127,6 +148,9 @@ const initialState = {
   nodes: [],
   edges: [],
   slots: [],
+  llmSettings: null,
+  autoFillSlotsFromFirstMessage: false,
+  readTiming: null,
   constructorSchema: null,
   selection: { type: 'none' } as SelectionState,
   popover: {
@@ -159,6 +183,9 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       nodes,
       edges,
       slots: definition.meta.slots || [],
+      llmSettings: definition.meta.llmSettings || null,
+      autoFillSlotsFromFirstMessage: definition.meta.autoFillSlotsFromFirstMessage || false,
+      readTiming: definition.meta.readTiming || null,
       selection: { type: 'none' },
       isDirty: false,
       error: null,
@@ -370,6 +397,26 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
   },
 
   // ========================================
+  // LLM Settings
+  // ========================================
+
+  setLlmSettings: (settings) => {
+    set({ llmSettings: settings, isDirty: true });
+  },
+
+  setAutoFillSlotsFromFirstMessage: (value) => {
+    set({ autoFillSlotsFromFirstMessage: value, isDirty: true });
+  },
+
+  // ========================================
+  // Read Timing
+  // ========================================
+
+  setReadTiming: (readTiming) => {
+    set({ readTiming, isDirty: true });
+  },
+
+  // ========================================
   // Selection
   // ========================================
 
@@ -503,6 +550,9 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       name: state.scriptName,
       description: state.scriptDescription || undefined,
       slots: state.slots,
+      llmSettings: state.llmSettings || undefined,
+      autoFillSlotsFromFirstMessage: state.autoFillSlotsFromFirstMessage || undefined,
+      readTiming: state.readTiming || undefined,
     });
   },
 
@@ -533,6 +583,15 @@ export const useScriptEditorEdges = () =>
 
 export const useScriptEditorSlots = () =>
   useScriptEditorStore((state) => state.slots);
+
+export const useScriptEditorLlmSettings = () =>
+  useScriptEditorStore((state) => state.llmSettings);
+
+export const useScriptEditorAutoFillSlots = () =>
+  useScriptEditorStore((state) => state.autoFillSlotsFromFirstMessage);
+
+export const useScriptEditorReadTiming = () =>
+  useScriptEditorStore((state) => state.readTiming);
 
 export const useScriptEditorSelection = () =>
   useScriptEditorStore((state) => state.selection);
@@ -579,6 +638,9 @@ export const useScriptEditorActions = () =>
       addSlot: state.addSlot,
       updateSlot: state.updateSlot,
       removeSlot: state.removeSlot,
+      setLlmSettings: state.setLlmSettings,
+      setAutoFillSlotsFromFirstMessage: state.setAutoFillSlotsFromFirstMessage,
+      setReadTiming: state.setReadTiming,
       setSelection: state.setSelection,
       clearSelection: state.clearSelection,
       copySelectedNode: state.copySelectedNode,

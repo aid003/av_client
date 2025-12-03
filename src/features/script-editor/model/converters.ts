@@ -173,7 +173,7 @@ function getDefaultBlockConfig(type: ScriptBlockType): ScriptBlock['config'] {
       return {
         slot: '',
         text: '',
-        required: true,
+        required: false,
         hintForLLM: '',
       };
     case 'ROUTER':

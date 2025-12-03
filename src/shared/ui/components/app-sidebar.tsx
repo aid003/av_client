@@ -25,6 +25,7 @@ import {
   MessageSquare,
   ScrollText,
   User2,
+  Users,
 } from "lucide-react";
 import { useTelegramAuth } from "@/shared/lib/use-telegram-auth";
 import { useThemeStore, type ThemeMode } from "@/shared/lib/store";
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { title: "Аккаунты", url: "/avito", icon: User2 },
   { title: "Объявления", url: "/ads", icon: ScrollText },
   { title: "Чаты", url: "/chats", icon: MessageSquare },
+  { title: "Лиды", url: "/leads", icon: Users },
   { title: "База знаний", url: "/knowledge-base", icon: BookText },
   { title: "Скрипты продаж", url: "/sales-scripts", icon: FileCode },
 ];

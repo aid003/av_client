@@ -3,6 +3,7 @@
 import { Label } from '@/shared/ui/components/ui/label';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
 import type { RouterBlockConfig } from '@/entities/sales-script';
+import { LLMSettingsSection } from '../llm-settings';
 
 interface RouterBlockFormProps {
   config: RouterBlockConfig;
@@ -26,6 +27,13 @@ export function RouterBlockForm({ config, onUpdate }: RouterBlockFormProps) {
       <div className="text-xs text-muted-foreground">
         Режим: {config.mode || 'YES_NO_OTHER'}
       </div>
+
+      {/* LLM Settings */}
+      <LLMSettingsSection
+        blockType="ROUTER"
+        config={config}
+        onUpdate={onUpdate}
+      />
     </div>
   );
 }

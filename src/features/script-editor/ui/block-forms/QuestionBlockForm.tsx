@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from '@/shared/ui/components/ui/select';
 import { SlotsManagementDialog } from '../dialogs/SlotsManagementDialog';
+import { LLMSettingsSection } from '../llm-settings/LLMSettingsSection';
 import type { QuestionBlockConfig, ScriptSlot } from '@/entities/sales-script';
-import { DelaySecondsInput } from './DelaySecondsInput';
+import { DelaySettingsSection } from './DelaySettingsSection';
 
 interface QuestionBlockFormProps {
   config: QuestionBlockConfig;
@@ -101,10 +102,10 @@ export function QuestionBlockForm({
       {config.required && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Макс. попыток переспроса: {config.maxRetries || '—'}</Label>
+            <Label>Макс. попыток переспроса: {config.maxRetries ?? 3}</Label>
           </div>
           <Slider
-            value={[config.maxRetries || 3]}
+            value={[config.maxRetries ?? 3]}
             onValueChange={(values: number[]) => onUpdate({ maxRetries: values[0] })}
             min={1}
             max={10}
@@ -128,9 +129,21 @@ export function QuestionBlockForm({
       </div>
 
       {/* Delay configuration */}
-      <DelaySecondsInput
+      <DelaySettingsSection
         value={config.delaySeconds}
         onChange={(value) => onUpdate({ delaySeconds: value })}
+      />
+
+      {/* LLM Settings */}
+      <LLMSettingsSection
+        blockType="QUESTION"
+        config={{
+          extractModel: config.extractModel,
+          extractSystemPrompt: config.extractSystemPrompt,
+          rephraseModel: config.rephraseModel,
+          rephraseSystemPrompt: config.rephraseSystemPrompt,
+        }}
+        onUpdate={(updates) => onUpdate(updates)}
       />
 
       <SlotsManagementDialog

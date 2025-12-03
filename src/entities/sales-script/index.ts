@@ -40,6 +40,12 @@ export type {
   CreateScriptBindingDto,
   UpdateScriptBindingDto,
   ScriptBindingsResponse,
+  // LLM Settings
+  LlmScriptSettings,
+  LlmModelInfo,
+  LlmOperationInfo,
+  LlmPromptTemplate,
+  LlmMetadataResponse,
 } from './model/types';
 
 // API
@@ -66,6 +72,8 @@ export {
   getAdScriptBindings,
   updateScriptBinding,
   deleteScriptBinding,
+  // LLM Metadata
+  getLlmMetadata,
 } from './api';
 
 // Store

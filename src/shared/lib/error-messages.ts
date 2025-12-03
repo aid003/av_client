@@ -8,6 +8,8 @@ export const ERROR_MESSAGES = {
   LOAD_CHATS: 'Ошибка при загрузке чатов',
   LOAD_MESSAGES: 'Ошибка при загрузке сообщений',
   LOAD_WEBHOOK_STATUS: 'Ошибка при загрузке статуса webhook',
+  LOAD_LEADS: 'Ошибка при загрузке лидов',
+  LOAD_LEAD: 'Ошибка при загрузке лида',
 
   // Ошибки операций
   ADD_ACCOUNT: 'Ошибка при добавлении аккаунта',
@@ -15,6 +17,9 @@ export const ERROR_MESSAGES = {
   SYNC_ADS: 'Ошибка при синхронизации объявлений',
   REGISTER_WEBHOOK: 'Ошибка при регистрации webhook',
   UNREGISTER_WEBHOOK: 'Ошибка при отписке от webhook',
+  CREATE_LEAD: 'Ошибка при создании лида',
+  UPDATE_LEAD: 'Ошибка при обновлении лида',
+  DELETE_LEAD: 'Ошибка при удалении лида',
 
   // Общие ошибки
   NETWORK_ERROR: 'Сервер временно недоступен. Попробуйте позже',

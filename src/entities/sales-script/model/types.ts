@@ -23,6 +23,41 @@ export type RouterMode = 'YES_NO_OTHER';
 /** Стиль ответа LLM */
 export type LLMReplyStyle = 'SHORT' | 'NORMAL' | 'DETAILED';
 
+// ============================================
+// LLM Settings Types
+// ============================================
+
+/**
+ * Глобальные настройки LLM для скрипта
+ */
+export interface LlmScriptSettings {
+  /** Модели по умолчанию для разных операций */
+  defaultModels?: {
+    generateReply?: string;
+    classifyYesNoOther?: string;
+    extractSlots?: string;
+    isAnswerRelevant?: string;
+    rephraseQuestion?: string;
+    normalizeSlotValue?: string;
+  };
+
+  /** Кастомные системные промпты по умолчанию */
+  defaultPrompts?: {
+    generateReply?: string;
+    classifyYesNoOther?: string;
+    extractSlots?: string;
+    isAnswerRelevant?: string;
+    rephraseQuestion?: string;
+    normalizeSlotValue?: string;
+  };
+
+  /** Температура по умолчанию (0-1) */
+  defaultTemperature?: number;
+
+  /** Максимальное количество токенов по умолчанию */
+  defaultMaxTokens?: number;
+}
+
 // --- Конфигурации блоков ---
 
 export interface StartBlockConfig {
@@ -42,11 +77,23 @@ export interface QuestionBlockConfig {
   hintForLLM?: string;
   maxRetries?: number;
   delaySeconds?: number;
+
+  // LLM настройки для извлечения слотов
+  extractModel?: string;
+  extractSystemPrompt?: string;
+
+  // LLM настройки для переспроса
+  rephraseModel?: string;
+  rephraseSystemPrompt?: string;
 }
 
 export interface RouterBlockConfig {
   mode: RouterMode;
   instruction: string;
+
+  // LLM настройки
+  model?: string;
+  systemPrompt?: string;
 }
 
 export interface LLMReplyBlockConfig {
@@ -56,6 +103,10 @@ export interface LLMReplyBlockConfig {
   temperature?: number;
   style?: LLMReplyStyle;
   delaySeconds?: number;
+
+  // LLM настройки
+  model?: string;
+  systemPrompt?: string;
 }
 
 export interface EndBlockConfig {
@@ -113,6 +164,29 @@ export interface ScriptMeta {
   name: string;
   description?: string;
   slots: ScriptSlot[];
+
+  /**
+   * Автоматическое предзаполнение слотов из первого сообщения пользователя.
+   * Если установлено в `true`, система попытается извлечь значения всех слотов
+   * из первого сообщения после запуска скрипта, используя LLM.
+   * По умолчанию: `false` (функция отключена).
+   */
+  autoFillSlotsFromFirstMessage?: boolean;
+
+  /**
+   * Общие настройки LLM для этого скрипта
+   */
+  llmSettings?: LlmScriptSettings;
+
+  /**
+   * Настройки времени прочтения сообщений
+   */
+  readTiming?: {
+    /** Задержка для первого сообщения (секунды) */
+    firstMessageDelaySeconds?: number;
+    /** Задержка для последующих сообщений (секунды) */
+    subsequentMessageDelaySeconds?: number;
+  };
 }
 
 // --- Полная структура definition ---
@@ -244,4 +318,45 @@ export interface UpdateScriptBindingDto {
 export interface ScriptBindingsResponse {
   data: ScriptBinding[];
   total: number;
+}
+
+// ============================================
+// LLM Metadata API Types
+// ============================================
+
+/**
+ * Информация о доступной модели LLM
+ */
+export interface LlmModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  description: string;
+}
+
+/**
+ * Информация об операции LLM
+ */
+export interface LlmOperationInfo {
+  id: string;
+  name: string;
+  description: string;
+  defaultModel: string;
+}
+
+/**
+ * Шаблоны промптов для операций
+ */
+export interface LlmPromptTemplate {
+  default: string;
+  description: string;
+}
+
+/**
+ * Ответ от API /api/llm/metadata
+ */
+export interface LlmMetadataResponse {
+  availableModels: LlmModelInfo[];
+  availableOperations: LlmOperationInfo[];
+  promptTemplates: Record<string, LlmPromptTemplate>;
 }
