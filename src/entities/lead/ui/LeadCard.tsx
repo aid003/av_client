@@ -44,9 +44,9 @@ export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
 
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Обновлен:</span>
+            <span className="font-medium">Последнее сообщение:</span>
             <span>
-              {new Date(lead.updatedAt).toLocaleString('ru-RU', {
+              {new Date(lead.lastMessageAt).toLocaleString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
@@ -75,7 +75,7 @@ export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
                 <div key={key} className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">{getSlotLabel(key)}:</span>
                   <span className="font-medium">{formatSlotValue(value)}</span>
-                  {key === 'phone' && typeof value === 'string' && (
+                  {typeof value === 'string' && (
                     <CopyButton text={value} size="sm" variant="ghost" />
                   )}
                 </div>

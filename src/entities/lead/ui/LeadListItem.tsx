@@ -1,8 +1,6 @@
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
-import { User, Phone, DollarSign, FileCode } from 'lucide-react';
+import { User, FileCode } from 'lucide-react';
 import type { Lead } from '../model/types';
-import { getSlotPhone, formatSlotCurrency } from '../lib';
-import { CopyButton } from '@/shared/ui/components/copy-button';
 
 interface LeadListItemProps {
   lead: Lead;
@@ -54,26 +52,12 @@ export function LeadListItem({ lead, onClick }: LeadListItemProps) {
               </div>
             )}
 
-            <div className="flex items-center gap-3 text-xs">
-              {getSlotPhone(lead.slots) && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Phone className="h-3 w-3" />
-                  <span>{getSlotPhone(lead.slots)}</span>
-                  <CopyButton text={getSlotPhone(lead.slots)!} size="sm" variant="ghost" />
-                </div>
-              )}
-              {formatSlotCurrency(lead.slots, 'budget') && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <DollarSign className="h-3 w-3" />
-                  <span>{formatSlotCurrency(lead.slots, 'budget')}</span>
-                </div>
-              )}
-            </div>
+            {/* Slots data removed from list item preview */}
           </div>
 
           <div className="flex flex-col items-end gap-2 shrink-0">
             <span className="text-[11px] text-muted-foreground">
-              {formatDate(lead.updatedAt)}
+              {formatDate(lead.lastMessageAt)}
             </span>
           </div>
         </div>

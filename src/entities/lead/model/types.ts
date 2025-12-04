@@ -4,14 +4,25 @@ export interface Lead {
   tenantId: string;
   avitoChatId?: string;
   scriptId?: string;
-  scriptName?: string; // For display purposes
+  scriptName?: string; // For display purposes (deprecated, use script.name)
   /** Client name - read-only, populated from chat participants */
   clientName?: string;
   finished: boolean;
+  lastMessageAt: string;
   slots?: Record<string, unknown>;
   currentBlockId?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  chat?: {
+    id: string;
+    chatId: string;
+    chatType: string;
+    lastMessagePreview?: string;
+  };
+  script?: {
+    id: string;
+    name: string;
+  };
 }
 
 // API DTOs
