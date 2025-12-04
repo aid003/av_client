@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
-import { Badge } from '@/shared/ui/components/ui/badge';
 import { User, Phone, DollarSign, FileCode } from 'lucide-react';
 import type { Lead } from '../model/types';
+import { getSlotPhone, formatSlotCurrency } from '../lib';
 
 interface LeadListItemProps {
   lead: Lead;
@@ -22,28 +22,6 @@ function formatDate(dateString: string): string {
     day: 'numeric',
     month: 'short',
   });
-}
-
-function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    NEW: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-    IN_PROGRESS:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-    COMPLETED:
-      'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-    LOST: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-  };
-  return colors[status] || 'bg-gray-100 text-gray-800';
-}
-
-function getStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    NEW: 'Новый',
-    IN_PROGRESS: 'В работе',
-    COMPLETED: 'Завершен',
-    LOST: 'Потерян',
-  };
-  return labels[status] || status;
 }
 
 export function LeadListItem({ lead, onClick }: LeadListItemProps) {
@@ -70,27 +48,22 @@ export function LeadListItem({ lead, onClick }: LeadListItemProps) {
             )}
 
             <div className="flex items-center gap-3 text-xs">
-              {lead.phone && (
+              {getSlotPhone(lead.slots) && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Phone className="h-3 w-3" />
-                  <span>{lead.phone}</span>
+                  <span>{getSlotPhone(lead.slots)}</span>
                 </div>
               )}
-              {lead.budget && (
+              {formatSlotCurrency(lead.slots, 'budget') && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <DollarSign className="h-3 w-3" />
-                  <span>{lead.budget.toLocaleString('ru-RU')} ₽</span>
+                  <span>{formatSlotCurrency(lead.slots, 'budget')}</span>
                 </div>
               )}
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <Badge
-              className={`text-[10px] px-2 py-0.5 ${getStatusColor(lead.status)}`}
-            >
-              {getStatusLabel(lead.status)}
-            </Badge>
             <span className="text-[11px] text-muted-foreground">
               {formatDate(lead.updatedAt)}
             </span>

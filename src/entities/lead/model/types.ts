@@ -1,16 +1,3 @@
-// Lead status enum
-export type LeadStatus = 'NEW' | 'IN_PROGRESS' | 'COMPLETED' | 'LOST';
-
-// Lead source enum
-export type LeadSource = 'AVITO_CHAT' | 'MANUAL' | 'OTHER';
-
-// Slot value (custom data from script)
-export interface LeadSlotValue {
-  slot: string;
-  value: string | number | boolean;
-  type: 'string' | 'number' | 'boolean' | 'enum';
-}
-
 // Main Lead entity
 export interface Lead {
   id: string;
@@ -18,13 +5,10 @@ export interface Lead {
   avitoChatId?: string;
   scriptId?: string;
   scriptName?: string; // For display purposes
+  /** Client name - read-only, populated from chat participants */
   clientName?: string;
-  phone?: string;
-  budget?: number;
-  status: LeadStatus;
-  source: LeadSource;
   finished: boolean;
-  slots?: LeadSlotValue[];
+  slots?: Record<string, unknown>;
   currentBlockId?: string;
   createdAt: string;
   updatedAt: string;
@@ -34,32 +18,19 @@ export interface Lead {
 export interface CreateLeadDto {
   avitoChatId?: string;
   scriptId?: string;
-  clientName?: string;
-  phone?: string;
-  budget?: number;
-  status?: LeadStatus;
-  source?: LeadSource;
   finished?: boolean;
-  slots?: LeadSlotValue[];
+  slots?: Record<string, unknown>;
 }
 
 export interface UpdateLeadDto {
-  clientName?: string;
-  phone?: string;
-  budget?: number;
-  status?: LeadStatus;
   finished?: boolean;
-  slots?: LeadSlotValue[];
+  slots?: Record<string, unknown>;
 }
 
 // API Query params
 export interface LeadFilters {
-  status?: LeadStatus;
   finished?: boolean;
   scriptId?: string;
-  phone?: string;
-  minBudget?: number;
-  hasPhone?: boolean;
   fromUpdatedAt?: string;
   toUpdatedAt?: string;
   avitoChatId?: string;

@@ -1,9 +1,6 @@
 // Types
 export type {
   Lead,
-  LeadStatus,
-  LeadSource,
-  LeadSlotValue,
   CreateLeadDto,
   UpdateLeadDto,
   LeadFilters,
@@ -39,3 +36,6 @@ export {
 // UI
 export { LeadListItem } from './ui/LeadListItem';
 export { LeadCard } from './ui/LeadCard';
+
+// Utilities
+export * from './lib';

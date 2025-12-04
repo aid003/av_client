@@ -60,28 +60,7 @@ export function LeadFilters({ tenantId }: LeadFiltersProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label>Статус</Label>
-          <Select
-            value={filters.status || 'all'}
-            onValueChange={(v) =>
-              handleFilterChange('status', v === 'all' ? undefined : v)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Все" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все</SelectItem>
-              <SelectItem value="NEW">Новый</SelectItem>
-              <SelectItem value="IN_PROGRESS">В работе</SelectItem>
-              <SelectItem value="COMPLETED">Завершен</SelectItem>
-              <SelectItem value="LOST">Потерян</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Завершенность</Label>
           <Select

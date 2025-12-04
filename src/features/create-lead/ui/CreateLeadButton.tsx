@@ -24,7 +24,6 @@ import {
 import {
   createLead,
   useLeadsActions,
-  type LeadStatus,
 } from '@/entities/lead';
 import { useSalesScriptsForTenant } from '@/entities/sales-script';
 
@@ -37,11 +36,8 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [clientName, setClientName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [budget, setBudget] = useState('');
   const [scriptId, setScriptId] = useState('');
-  const [status, setStatus] = useState<LeadStatus>('NEW');
+  const [slots, setSlots] = useState<Record<string, unknown>>({});
 
   const { addLead } = useLeadsActions();
   const scripts = useSalesScriptsForTenant(tenantId);
@@ -52,13 +48,17 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
     setError(null);
 
     try {
+      // Clean up empty slots
+      const cleanedSlots = Object.entries(slots).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, unknown>);
+
       const lead = await createLead(tenantId, {
-        clientName: clientName || undefined,
-        phone: phone || undefined,
-        budget: budget ? parseFloat(budget) : undefined,
         scriptId: scriptId || undefined,
-        status,
-        source: 'MANUAL',
+        slots: Object.keys(cleanedSlots).length > 0 ? cleanedSlots : undefined,
       });
 
       addLead(tenantId, lead);
@@ -72,11 +72,8 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
   };
 
   const resetForm = () => {
-    setClientName('');
-    setPhone('');
-    setBudget('');
     setScriptId('');
-    setStatus('NEW');
+    setSlots({});
     setError(null);
   };
 
@@ -99,22 +96,12 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="clientName">Имя клиента</Label>
-              <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Иван Иванов"
-              />
-            </div>
-
-            <div className="grid gap-2">
               <Label htmlFor="phone">Телефон</Label>
               <Input
                 id="phone"
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={(slots.phone as string) || ''}
+                onChange={(e) => setSlots({ ...slots, phone: e.target.value })}
                 placeholder="+7 900 123-45-67"
               />
             </div>
@@ -124,8 +111,8 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
               <Input
                 id="budget"
                 type="number"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                value={(slots.budget as string) || ''}
+                onChange={(e) => setSlots({ ...slots, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
                 placeholder="50000"
               />
             </div>
@@ -142,24 +129,6 @@ export function CreateLeadButton({ tenantId }: CreateLeadButtonProps) {
                       {script.name}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="status">Статус</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as LeadStatus)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NEW">Новый</SelectItem>
-                  <SelectItem value="IN_PROGRESS">В работе</SelectItem>
-                  <SelectItem value="COMPLETED">Завершен</SelectItem>
-                  <SelectItem value="LOST">Потерян</SelectItem>
                 </SelectContent>
               </Select>
             </div>

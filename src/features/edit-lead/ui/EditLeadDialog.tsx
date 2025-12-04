@@ -25,7 +25,6 @@ import {
   updateLead,
   useLeadsActions,
   type Lead,
-  type LeadStatus,
 } from '@/entities/lead';
 import { useSalesScriptsForTenant } from '@/entities/sales-script';
 
@@ -39,22 +38,15 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [clientName, setClientName] = useState(lead.clientName || '');
-  const [phone, setPhone] = useState(lead.phone || '');
-  const [budget, setBudget] = useState(lead.budget?.toString() || '');
-  const [scriptId, setScriptId] = useState(lead.scriptId || '');
-  const [status, setStatus] = useState<LeadStatus>(lead.status);
+  const [slots, setSlots] = useState<Record<string, unknown>>(lead.slots || {});
+  const [scriptId] = useState(lead.scriptId || '');
 
   const { updateLead: updateLeadInStore } = useLeadsActions();
   const scripts = useSalesScriptsForTenant(tenantId);
 
   // Reset form when lead changes
   useEffect(() => {
-    setClientName(lead.clientName || '');
-    setPhone(lead.phone || '');
-    setBudget(lead.budget?.toString() || '');
-    setScriptId(lead.scriptId || '');
-    setStatus(lead.status);
+    setSlots(lead.slots || {});
   }, [lead]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,11 +55,15 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
     setError(null);
 
     try {
+      const cleanedSlots = Object.entries(slots).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, unknown>);
+
       const updatedLead = await updateLead(tenantId, lead.id, {
-        clientName: clientName || undefined,
-        phone: phone || undefined,
-        budget: budget ? parseFloat(budget) : undefined,
-        status,
+        slots: Object.keys(cleanedSlots).length > 0 ? cleanedSlots : undefined,
       });
 
       updateLeadInStore(tenantId, updatedLead);
@@ -100,13 +96,15 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="clientName">Имя клиента</Label>
+              <Label>Имя клиента</Label>
               <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Иван Иванов"
+                value={lead.clientName || '—'}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Имя клиента устанавливается автоматически из чата
+              </p>
             </div>
 
             <div className="grid gap-2">
@@ -114,8 +112,8 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
               <Input
                 id="phone"
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={(slots.phone as string) || ''}
+                onChange={(e) => setSlots({ ...slots, phone: e.target.value })}
                 placeholder="+7 900 123-45-67"
               />
             </div>
@@ -125,17 +123,17 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
               <Input
                 id="budget"
                 type="number"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                value={(slots.budget as string) || ''}
+                onChange={(e) => setSlots({ ...slots, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
                 placeholder="50000"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="scriptId">Скрипт продаж</Label>
-              <Select value={scriptId} onValueChange={setScriptId} disabled>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите скрипт" />
+              <Label>Скрипт продаж</Label>
+              <Select value={scriptId} disabled>
+                <SelectTrigger className="bg-muted">
+                  <SelectValue placeholder="Не выбран" />
                 </SelectTrigger>
                 <SelectContent>
                   {scripts.map((script) => (
@@ -145,24 +143,9 @@ export function EditLeadDialog({ lead, tenantId }: EditLeadDialogProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="status">Статус</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as LeadStatus)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NEW">Новый</SelectItem>
-                  <SelectItem value="IN_PROGRESS">В работе</SelectItem>
-                  <SelectItem value="COMPLETED">Завершен</SelectItem>
-                  <SelectItem value="LOST">Потерян</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-muted-foreground">
+                Скрипт нельзя изменить после создания лида
+              </p>
             </div>
           </div>
 
