@@ -22,14 +22,20 @@ import {
   Edit,
   Trash2,
   Link as LinkIcon,
+  User,
+  Unlink,
 } from 'lucide-react';
-import type { SalesScript } from '../model/types';
+import type { SalesScript, ScriptBinding } from '../model/types';
 
 interface SalesScriptCardProps {
   script: SalesScript;
   onEdit?: (script: SalesScript) => void;
   onDelete?: (script: SalesScript) => void;
   onAttachAds?: (script: SalesScript) => void;
+  onAttachToAccount?: (script: SalesScript) => void;
+  onDetachFromAccount?: (script: SalesScript) => void;
+  accountBinding?: ScriptBinding | null;
+  accountLabel?: string | null;
 }
 
 export function SalesScriptCard({
@@ -37,7 +43,15 @@ export function SalesScriptCard({
   onEdit,
   onDelete,
   onAttachAds,
+  onAttachToAccount,
+  onDetachFromAccount,
+  accountBinding,
+  accountLabel,
 }: SalesScriptCardProps) {
+  const hasAccountBinding =
+    accountBinding &&
+    (accountBinding.avitoAdId === null ||
+      accountBinding.avitoAdId === undefined);
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -77,11 +91,34 @@ export function SalesScriptCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {onAttachAds && (
-                <DropdownMenuItem onClick={() => onAttachAds(script)}>
-                  <LinkIcon className="h-4 w-4 mr-2" />
-                  Привязать объявления
-                </DropdownMenuItem>
+              {hasAccountBinding ? (
+                <>
+                  {onDetachFromAccount && (
+                    <DropdownMenuItem
+                      onClick={() => onDetachFromAccount(script)}
+                    >
+                      <Unlink className="h-4 w-4 mr-2" />
+                      Отвязать от аккаунта
+                    </DropdownMenuItem>
+                  )}
+                </>
+              ) : (
+                <>
+                  {onAttachToAccount && (
+                    <DropdownMenuItem
+                      onClick={() => onAttachToAccount(script)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Привязать к аккаунту
+                    </DropdownMenuItem>
+                  )}
+                  {onAttachAds && (
+                    <DropdownMenuItem onClick={() => onAttachAds(script)}>
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      Привязать объявления
+                    </DropdownMenuItem>
+                  )}
+                </>
               )}
               {onEdit && (
                 <DropdownMenuItem onClick={() => onEdit(script)}>
@@ -108,6 +145,12 @@ export function SalesScriptCard({
           <Calendar className="h-4 w-4 shrink-0" />
           <span>Создан: {formatDate(script.createdAt)}</span>
         </div>
+        {hasAccountBinding && accountLabel && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <User className="h-4 w-4 shrink-0" />
+            <span>Привязан к аккаунту: {accountLabel}</span>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="p-4 pt-0">

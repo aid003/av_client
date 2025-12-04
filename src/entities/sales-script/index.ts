@@ -85,5 +85,14 @@ export {
   useSalesScriptsActions,
 } from './model/store';
 
+// Script Bindings Store
+export {
+  useScriptBindingsStore,
+  useScriptBindings,
+  useScriptBindingsLoading,
+  useScriptBindingsError,
+  useScriptBindingsActions,
+} from './model/script-bindings-store';
+
 // UI
 export { SalesScriptCard } from './ui/SalesScriptCard';

@@ -296,6 +296,7 @@ export interface ScriptBinding {
   id: string;
   salesScriptId: string;
   salesScriptName: string;
+  avitoAccountId?: string;
   avitoAdId?: string;
   priority: number;
   isActive: boolean;
