@@ -228,7 +228,7 @@ export function SalesScriptsList({ tenantId }: SalesScriptsListProps) {
         script={detachingScript}
         binding={
           detachingScript
-            ? getAccountBinding(detachingScript.id, tenantId)
+            ? getAccountBinding(detachingScript.id, tenantId) ?? null
             : null
         }
         tenantId={tenantId}

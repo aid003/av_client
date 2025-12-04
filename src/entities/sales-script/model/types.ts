@@ -306,7 +306,7 @@ export interface ScriptBinding {
 
 export interface CreateScriptBindingDto {
   avitoAccountId?: string;
-  avitoAdId?: string;
+  avitoAdId?: string | null;
   priority: number;
   isActive?: boolean;
 }
