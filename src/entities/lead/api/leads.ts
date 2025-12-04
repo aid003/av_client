@@ -15,9 +15,19 @@ export async function getLeads(
   tenantId: string,
   params?: LeadListParams
 ): Promise<LeadListResponse> {
+  // Filter out undefined values to prevent them from being sent as "undefined" strings
+  const cleanedParams = params
+    ? Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, unknown>)
+    : {};
+
   return apiClient.get<LeadListResponse>('/api/crm/leads', {
     tenantId,
-    ...params,
+    ...cleanedParams,
   });
 }
 

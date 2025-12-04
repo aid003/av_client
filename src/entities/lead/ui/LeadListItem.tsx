@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/shared/ui/components/ui/card';
 import { User, Phone, DollarSign, FileCode } from 'lucide-react';
 import type { Lead } from '../model/types';
 import { getSlotPhone, formatSlotCurrency } from '../lib';
+import { CopyButton } from '@/shared/ui/components/copy-button';
 
 interface LeadListItemProps {
   lead: Lead;
@@ -10,6 +11,12 @@ interface LeadListItemProps {
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
+
+  // Validate date
+  if (isNaN(date.getTime())) {
+    return '—';
+  }
+
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / 86400000);
@@ -52,6 +59,7 @@ export function LeadListItem({ lead, onClick }: LeadListItemProps) {
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Phone className="h-3 w-3" />
                   <span>{getSlotPhone(lead.slots)}</span>
+                  <CopyButton text={getSlotPhone(lead.slots)!} size="sm" variant="ghost" />
                 </div>
               )}
               {formatSlotCurrency(lead.slots, 'budget') && (

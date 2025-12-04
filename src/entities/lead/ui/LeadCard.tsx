@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { Lead } from '../model/types';
 import { getSlotEntries, formatSlotValue, getSlotLabel } from '../lib';
+import { CopyButton } from '@/shared/ui/components/copy-button';
 import Link from 'next/link';
 
 interface LeadCardProps {
@@ -45,7 +46,7 @@ export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">Обновлен:</span>
             <span>
-              {new Date(lead.updatedAt).toLocaleDateString('ru-RU', {
+              {new Date(lead.updatedAt).toLocaleString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
@@ -74,6 +75,9 @@ export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
                 <div key={key} className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">{getSlotLabel(key)}:</span>
                   <span className="font-medium">{formatSlotValue(value)}</span>
+                  {key === 'phone' && typeof value === 'string' && (
+                    <CopyButton text={value} size="sm" variant="ghost" />
+                  )}
                 </div>
               ))}
             </div>

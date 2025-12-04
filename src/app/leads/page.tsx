@@ -5,7 +5,6 @@ import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { LeadsList } from '@/widgets/leads-list';
 import { LeadDetailView } from '@/widgets/lead-detail-view';
 import { LeadFilters } from '@/features/lead-filters';
-import { CreateLeadButton } from '@/features/create-lead';
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/components/ui/sheet';
 import { useIsMobile } from '@/shared/hooks/use-mobile';
 import { useSidebar } from '@/shared/ui/components/ui/sidebar';
@@ -79,10 +78,7 @@ export default function LeadsPage() {
         <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
           {!selectedLead && (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Лиды</h1>
-                <CreateLeadButton tenantId={tenantId!} />
-              </div>
+              <h1 className="text-3xl font-bold">Лиды</h1>
               <LeadFilters tenantId={tenantId!} />
               <LeadsList
                 tenantId={tenantId!}
@@ -122,10 +118,7 @@ export default function LeadsPage() {
       {/* Left panel with filters and list */}
       <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
         <div className="p-4 border-b space-y-4 shrink-0">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Лиды</h1>
-            <CreateLeadButton tenantId={tenantId!} />
-          </div>
+          <h1 className="text-2xl font-bold">Лиды</h1>
           <LeadFilters tenantId={tenantId!} />
         </div>
         <div className="flex-1 overflow-y-auto p-4">
