@@ -1,4 +1,5 @@
 import { config } from '@/shared/lib/config';
+import { validateRequestUrl, validateRequestBody } from '@/shared/lib/security-validator.util';
 
 export class ApiError extends Error {
   constructor(
@@ -85,7 +86,19 @@ export class ApiClient {
       });
     }
 
-    return url.toString();
+    const urlString = url.toString();
+    
+    // Проверяем URL на подозрительные паттерны
+    const validation = validateRequestUrl(urlString);
+    if (!validation.isSafe) {
+      console.error('[API Security] Blocked suspicious URL:', {
+        url: urlString.substring(0, 200),
+        suspiciousParts: validation.suspiciousParts,
+      });
+      throw new Error('Запрос содержит подозрительные данные и был заблокирован');
+    }
+
+    return urlString;
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -218,6 +231,18 @@ export class ApiClient {
    * POST запрос
    */
   async post<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
+    // Проверяем body на подозрительные паттерны перед отправкой
+    if (data) {
+      const bodyValidation = validateRequestBody(data);
+      if (!bodyValidation.isSafe) {
+        console.error('[API Security] Blocked suspicious request body:', {
+          endpoint,
+          suspiciousFields: bodyValidation.suspiciousFields,
+        });
+        throw new Error('Данные запроса содержат подозрительные паттерны и были заблокированы');
+      }
+    }
+
     const url = this.buildUrl(endpoint, options?.params);
     const timeout = options?.timeout ?? this.defaultTimeout;
     const maxRetries = options?.retries ?? 0; // POST по умолчанию не повторяем
@@ -267,6 +292,18 @@ export class ApiClient {
    * PUT запрос
    */
   async put<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
+    // Проверяем body на подозрительные паттерны перед отправкой
+    if (data) {
+      const bodyValidation = validateRequestBody(data);
+      if (!bodyValidation.isSafe) {
+        console.error('[API Security] Blocked suspicious request body:', {
+          endpoint,
+          suspiciousFields: bodyValidation.suspiciousFields,
+        });
+        throw new Error('Данные запроса содержат подозрительные паттерны и были заблокированы');
+      }
+    }
+
     const url = this.buildUrl(endpoint, options?.params);
     const timeout = options?.timeout ?? this.defaultTimeout;
     const maxRetries = options?.retries ?? 0;
@@ -365,6 +402,18 @@ export class ApiClient {
    * PATCH запрос
    */
   async patch<T, D = unknown>(endpoint: string, data?: D, options?: RequestConfig): Promise<T> {
+    // Проверяем body на подозрительные паттерны перед отправкой
+    if (data) {
+      const bodyValidation = validateRequestBody(data);
+      if (!bodyValidation.isSafe) {
+        console.error('[API Security] Blocked suspicious request body:', {
+          endpoint,
+          suspiciousFields: bodyValidation.suspiciousFields,
+        });
+        throw new Error('Данные запроса содержат подозрительные паттерны и были заблокированы');
+      }
+    }
+
     const url = this.buildUrl(endpoint, options?.params);
     const timeout = options?.timeout ?? this.defaultTimeout;
     const maxRetries = options?.retries ?? 0;
