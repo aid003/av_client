@@ -60,7 +60,8 @@ export function AddAccountButton({
     try {
       // Формируем URL для возврата в мини-приложение Telegram
       const returnUrl = 'https://t.me/av_client_bot?startapp=success';
-      const scopes = 'messenger:read,messenger:write,user:read,items:info';
+      const scopes =
+        'items:info,job:applications,job:cv,messenger:read,messenger:write,stats:read,user:read';
 
       const response = await getAuthorizeUrl({
         tenantId,
@@ -73,31 +74,33 @@ export function AddAccountButton({
       setIsDialogOpen(false);
       setAccountLabel('');
 
-      // Открываем ссылку во внешнем браузере (не в мини-приложении)
-      // Проверяем наличие Telegram WebApp API
-      try {
-        if (
-          typeof window !== 'undefined' &&
-          window.Telegram &&
-          window.Telegram.WebApp &&
-          window.Telegram.WebApp.openLink
-        ) {
-          // Используем Telegram WebApp API для открытия во внешнем браузере
-          window.Telegram.WebApp.openLink(response.authorizationUrl);
-        } else {
-          // Fallback: открываем в новой вкладке
+      // Открываем ссылку в системном браузере (_blank), чтобы не использовать встроенный браузер Telegram
+      if (typeof window !== 'undefined') {
+        try {
           const opened = window.open(response.authorizationUrl, '_blank', 'noopener,noreferrer');
-          if (!opened) {
-            throw new Error('Не удалось открыть окно авторизации. Проверьте настройки блокировки всплывающих окон.');
+
+          if (!opened && process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
+            console.warn(
+              'Не удалось открыть окно авторизации (возможно, блокировка всплывающих окон).'
+            );
+          }
+        } catch (openError) {
+          if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
+            console.error('Ошибка открытия ссылки авторизации', openError);
+          }
+        } finally {
+          // Закрываем мини-приложение: дальнейшая работа происходит вне WebApp
+          try {
+            window.Telegram?.WebApp?.close();
+          } catch (closeError) {
+            if (process.env.NODE_ENV === 'development') {
+              // eslint-disable-next-line no-console
+              console.warn('Не удалось закрыть мини-приложение', closeError);
+            }
           }
         }
-      } catch (openError) {
-        setError(
-          openError instanceof Error
-            ? openError.message
-            : 'Не удалось открыть страницу авторизации'
-        );
-        setIsDialogOpen(true); // Открываем диалог обратно для показа ошибки
       }
     } catch (err) {
       setError(

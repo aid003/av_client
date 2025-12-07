@@ -16,6 +16,7 @@ import {
   useAvitoAccountsStore,
   type AvitoAccount,
 } from '@/entities/avito-account';
+import { ApiError } from '@/shared/api';
 
 interface DeleteAccountButtonProps {
   account: AvitoAccount;
@@ -32,18 +33,45 @@ export function DeleteAccountButton({
   const { removeAccount } = useAvitoAccountsStore();
 
   const handleDelete = async () => {
+    if (isDeleting) {
+      return; // защита от двойного клика/двойного вызова
+    }
     setIsDeleting(true);
     setError(null);
+
+    let hasError = false;
 
     try {
       await deleteAvitoAccount(account.id);
       removeAccount(account.tenantId, account.id);
-      setIsOpen(false);
-      onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при удалении');
+      let message = 'Ошибка при удалении';
+
+      // Показываем ошибку только если backend вернул 404 (аккаунт не найден)
+      if (err instanceof ApiError && err.status === 404) {
+          hasError = true;
+        message =
+          err.message && err.message !== 'The string did not match the expected pattern.'
+            ? err.message
+            : 'Аккаунт не найден. Возможно, он уже был удалён.';
+      } else if (err instanceof Error) {
+        hasError = true;
+        // Для прочих статусов/ошибок показываем общее сообщение
+        message =
+          err.message === 'The string did not match the expected pattern.'
+            ? 'Ошибка при удалении аккаунта Avito. Попробуйте позже.'
+            : err.message;
+      }
+
+      setError(message);
     } finally {
       setIsDeleting(false);
+      // Если не было ошибки (статус 200) — закрываем окно и уведомляем родителя,
+      // который перезагрузит список аккаунтов
+      if (!hasError) {
+        setIsOpen(false);
+        onSuccess();
+      }
     }
   };
 

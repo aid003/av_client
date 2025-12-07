@@ -78,7 +78,29 @@ export class ApiClient {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean>): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
+    // Нормализуем базовый URL: если env пуст, пробуем использовать origin браузера
+    const base =
+      this.baseUrl?.trim() ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+
+    if (!base) {
+      throw new Error('Базовый URL API не настроен. Задайте NEXT_PUBLIC_API_BASE_URL.');
+    }
+
+    const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+    let url: URL;
+
+    try {
+      url = new URL(`${normalizedBase}${normalizedEndpoint}`);
+    } catch (error) {
+      // Бросаем понятное сообщение вместо неочевидного "string did not match..."
+      if (error instanceof TypeError) {
+        throw new Error('Некорректный адрес API. Проверьте NEXT_PUBLIC_API_BASE_URL.');
+      }
+      throw error;
+    }
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -87,7 +109,7 @@ export class ApiClient {
     }
 
     const urlString = url.toString();
-    
+
     // Проверяем URL на подозрительные паттерны
     const validation = validateRequestUrl(urlString);
     if (!validation.isSafe) {
@@ -156,6 +178,12 @@ export class ApiClient {
         } catch {
           // Используем дефолтное сообщение
         }
+      }
+
+      // Нормализация «технических» сообщений от внешних сервисов
+      if (errorMessage === 'The string did not match the expected pattern.') {
+        errorMessage =
+          'Ошибка при обращении к внешнему сервису. Попробуйте выполнить действие позже.';
       }
 
       throw new ApiError(
