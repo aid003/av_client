@@ -8,6 +8,7 @@ import {
   MiniMap,
   BackgroundVariant,
   useOnViewportChange,
+  SelectionMode,
   type ReactFlowInstance,
   type NodeMouseHandler,
   type EdgeMouseHandler,
@@ -20,9 +21,11 @@ import {
   useScriptEditorNodes,
   useScriptEditorEdges,
   useScriptEditorActions,
+  useScriptEditorStore,
 } from '../model/store';
 import type { ScriptBlockType } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge } from '../model/types';
+import { cn } from '@/shared/lib/utils';
 
 export function EditorCanvas() {
   const nodes = useScriptEditorNodes();
@@ -35,9 +38,12 @@ export function EditorCanvas() {
     addNode,
     openPopover,
     closePopover,
-    copySelectedNode,
-    pasteNode,
+    copySelectedNodes,
+    pasteNodes,
+    setPanning,
   } = useScriptEditorActions();
+
+  const isPanning = useScriptEditorStore((state) => state.isPanning);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance<ScriptNode, ScriptFlowEdge> | null>(null);
@@ -110,6 +116,18 @@ export function EditorCanvas() {
     closePopover();
   }, [closePopover]);
 
+  // Обработчики panning
+  const onMoveStart = useCallback(() => {
+    setPanning(true);
+    closePopover();
+  }, [setPanning, closePopover]);
+
+  const onMoveEnd = useCallback(() => {
+    setTimeout(() => {
+      setPanning(false);
+    }, 300); // Соответствует transition в CSS
+  }, [setPanning]);
+
   // Drag & Drop обработчики
   const onDragOver = useCallback((event: DragEvent) => {
     event.preventDefault();
@@ -124,6 +142,9 @@ export function EditorCanvas() {
       if (!type || !reactFlowInstance.current || !reactFlowWrapper.current) {
         return;
       }
+
+      // FIX: Принудительный reflow для актуальных размеров
+      void reactFlowWrapper.current.offsetHeight;
 
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
       const position = reactFlowInstance.current.screenToFlowPosition({
@@ -152,16 +173,20 @@ export function EditorCanvas() {
 
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
-        copySelectedNode();
+        copySelectedNodes();
       } else if (e.key === 'v' || e.key === 'V') {
         e.preventDefault();
-        pasteNode();
+        pasteNodes();
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        copySelectedNodes();
+        pasteNodes();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [copySelectedNode, pasteNode]);
+  }, [copySelectedNodes, pasteNodes]);
 
   return (
     <div ref={reactFlowWrapper} className="w-full h-full">
@@ -182,6 +207,15 @@ export function EditorCanvas() {
         fitView
         snapToGrid
         snapGrid={[16, 16]}
+        panOnDrag={[2]}
+        panOnScroll={true}
+        panActivationKeyCode="Space"
+        selectionOnDrag={true}
+        selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode="Meta"
+        deleteKeyCode="Delete"
+        onMoveStart={onMoveStart}
+        onMoveEnd={onMoveEnd}
         defaultEdgeOptions={{
           type: 'smoothstep',
           animated: false,
@@ -205,7 +239,13 @@ export function EditorCanvas() {
           nodeStrokeWidth={3}
           zoomable
           pannable
-          className="bg-background border rounded-lg shadow-md"
+          className={cn(
+            "bg-background border rounded-lg shadow-md transition-opacity duration-300 ease-in-out",
+            isPanning ? "opacity-100" : "opacity-0"
+          )}
+          style={{
+            pointerEvents: isPanning ? 'auto' : 'none',
+          }}
         />
       </ReactFlow>
 

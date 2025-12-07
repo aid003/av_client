@@ -56,7 +56,8 @@ interface ScriptEditorState {
   selection: SelectionState;
   popover: PopoverState;
   isPaletteCollapsed: boolean;
-  copiedNode: ScriptNode | null;
+  copiedNodes: ScriptNode[];
+  isPanning: boolean;
   isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
@@ -116,6 +117,11 @@ interface ScriptEditorState {
   // Actions - Copy/Paste
   copySelectedNode: () => void;
   pasteNode: () => void;
+  copySelectedNodes: () => void;
+  pasteNodes: () => void;
+
+  // Actions - Panning
+  setPanning: (isPanning: boolean) => void;
 
   // Actions - Popover
   openPopover: (nodeId: string, position: { x: number; y: number }) => void;
@@ -159,7 +165,8 @@ const initialState = {
     anchorPosition: null,
   } as PopoverState,
   isPaletteCollapsed: false,
-  copiedNode: null,
+  copiedNodes: [],
+  isPanning: false,
   isDirty: false,
   isLoading: false,
   isSaving: false,
@@ -440,28 +447,29 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     const nodeToCopy = state.nodes.find((n) => n.id === selection.nodeId);
     if (!nodeToCopy) return;
 
-    set({ copiedNode: nodeToCopy });
+    set({ copiedNodes: [nodeToCopy] });
   },
 
   pasteNode: () => {
     const state = get();
-    if (!state.copiedNode) return;
+    if (state.copiedNodes.length === 0) return;
 
-    const newBlockId = generateBlockId(state.copiedNode.data.blockType);
+    const copiedNode = state.copiedNodes[0];
+    const newBlockId = generateBlockId(copiedNode.data.blockType);
 
     // Глубокое копирование config
-    const newConfig = JSON.parse(JSON.stringify(state.copiedNode.data.config));
+    const newConfig = JSON.parse(JSON.stringify(copiedNode.data.config));
 
     // Создаем новый узел со смещением
     const newNode: ScriptNode = {
-      ...state.copiedNode,
+      ...copiedNode,
       id: newBlockId,
       position: {
-        x: state.copiedNode.position.x + 50,
-        y: state.copiedNode.position.y + 50,
+        x: copiedNode.position.x + 50,
+        y: copiedNode.position.y + 50,
       },
       data: {
-        ...state.copiedNode.data,
+        ...copiedNode.data,
         blockId: newBlockId,
         config: newConfig,
       },
@@ -472,6 +480,79 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       isDirty: true,
       selection: { type: 'node', nodeId: newBlockId },
     }));
+  },
+
+  copySelectedNodes: () => {
+    const state = get();
+
+    // ReactFlow автоматически ставит selected: true при box selection
+    const selectedNodes = state.nodes.filter((node) => node.selected === true);
+
+    if (selectedNodes.length === 0) {
+      // Fallback - копируем из selection
+      const selection = state.selection;
+      if (selection.type === 'node') {
+        const nodeToCopy = state.nodes.find((n) => n.id === selection.nodeId);
+        if (nodeToCopy) {
+          set({ copiedNodes: [nodeToCopy] });
+        }
+      }
+      return;
+    }
+
+    set({ copiedNodes: selectedNodes });
+  },
+
+  pasteNodes: () => {
+    const state = get();
+    if (state.copiedNodes.length === 0) return;
+
+    // Находим минимальные координаты для сохранения относительных позиций
+    const minX = Math.min(...state.copiedNodes.map((n) => n.position.x));
+    const minY = Math.min(...state.copiedNodes.map((n) => n.position.y));
+
+    const newNodes: ScriptNode[] = [];
+    const PASTE_OFFSET = 50;
+
+    state.copiedNodes.forEach((copiedNode) => {
+      const newBlockId = generateBlockId(copiedNode.data.blockType);
+      const newConfig = JSON.parse(JSON.stringify(copiedNode.data.config));
+
+      // Сохраняем относительное положение
+      const relativeX = copiedNode.position.x - minX;
+      const relativeY = copiedNode.position.y - minY;
+
+      const newNode: ScriptNode = {
+        ...copiedNode,
+        id: newBlockId,
+        selected: false,
+        position: {
+          x: minX + PASTE_OFFSET + relativeX,
+          y: minY + PASTE_OFFSET + relativeY,
+        },
+        data: {
+          ...copiedNode.data,
+          blockId: newBlockId,
+          config: newConfig,
+        },
+      };
+
+      newNodes.push(newNode);
+    });
+
+    set((state) => ({
+      nodes: [...state.nodes, ...newNodes],
+      isDirty: true,
+      selection: { type: 'none' },
+    }));
+  },
+
+  // ========================================
+  // Panning
+  // ========================================
+
+  setPanning: (isPanning) => {
+    set({ isPanning });
   },
 
   // ========================================
@@ -645,6 +726,9 @@ export const useScriptEditorActions = () =>
       clearSelection: state.clearSelection,
       copySelectedNode: state.copySelectedNode,
       pasteNode: state.pasteNode,
+      copySelectedNodes: state.copySelectedNodes,
+      pasteNodes: state.pasteNodes,
+      setPanning: state.setPanning,
       openPopover: state.openPopover,
       closePopover: state.closePopover,
       togglePaletteCollapse: state.togglePaletteCollapse,

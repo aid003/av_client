@@ -199,7 +199,25 @@ export class ApiClient {
       return undefined as T;
     }
 
-    return await response.json();
+    // Получаем текст ответа
+    const text = await response.text();
+
+    // Если текст пустой, возвращаем undefined
+    if (!text || text.trim() === '') {
+      return undefined as T;
+    }
+
+    // Пытаемся распарсить как JSON
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      // Если не удалось распарсить, логируем и возвращаем undefined
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[API] Failed to parse response as JSON:', text.substring(0, 100));
+      }
+      return undefined as T;
+    }
   }
 
   /**
