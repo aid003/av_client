@@ -6,6 +6,7 @@ import { HelpCircle } from 'lucide-react';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { BaseNode } from './BaseNode';
 import type { ScriptNode } from '../../model/types';
+import { useScriptEditorValidation } from '../../model/store';
 import type { QuestionBlockConfig } from '@/entities/sales-script';
 
 type QuestionNodeProps = NodeProps<ScriptNode>;
@@ -14,6 +15,11 @@ export const QuestionNode = memo(function QuestionNode({
   data,
   selected,
 }: QuestionNodeProps) {
+  const { byBlockId } = useScriptEditorValidation();
+  const issues = byBlockId[data.blockId] || [];
+  const hasError = issues.some((issue) => issue.severity === 'error');
+  const hasWarning = issues.some((issue) => issue.severity === 'warning');
+  const validationStatus = hasError ? 'error' : hasWarning ? 'warning' : undefined;
   const config = data.config as QuestionBlockConfig;
 
   return (
@@ -22,6 +28,8 @@ export const QuestionNode = memo(function QuestionNode({
       iconBgColor="bg-amber-500"
       borderColor="border-amber-200 dark:border-amber-800"
       selected={selected}
+      validationStatus={validationStatus}
+      validationIssues={issues}
     >
       <div className="space-y-1.5">
         <div className="font-medium text-sm truncate">{data.title}</div>

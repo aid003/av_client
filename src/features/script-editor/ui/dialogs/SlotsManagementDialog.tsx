@@ -9,6 +9,7 @@ import { Textarea } from '@/shared/ui/components/ui/textarea';
 import { Switch } from '@/shared/ui/components/ui/switch';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { Card } from '@/shared/ui/components/ui/card';
+import { cn } from '@/shared/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ import {
   useScriptEditorSlots,
   useScriptEditorActions,
   useScriptEditorStore,
+  useScriptEditorValidation,
 } from '../../model/store';
 import type { ScriptSlot, SlotType, QuestionBlockConfig } from '@/entities/sales-script';
 
@@ -163,6 +165,11 @@ interface SlotCardProps {
 }
 
 function SlotCard({ slot, onEdit, onDelete }: SlotCardProps) {
+  const { bySlotName } = useScriptEditorValidation();
+  const issues = bySlotName[slot.name] || [];
+  const hasError = issues.some((issue) => issue.severity === 'error');
+  const hasWarning = issues.some((issue) => issue.severity === 'warning');
+
   const getSlotTypeLabel = (type: SlotType): string => {
     switch (type) {
       case 'string': return 'Строка';
@@ -174,7 +181,16 @@ function SlotCard({ slot, onEdit, onDelete }: SlotCardProps) {
   };
 
   return (
-    <Card className="p-4">
+    <Card
+      className={cn(
+        'p-4',
+        hasError
+          ? 'border-destructive/60 shadow-[0_0_0_2px_rgba(239,68,68,0.08)]'
+          : hasWarning
+            ? 'border-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.12)]'
+            : null
+      )}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -185,6 +201,19 @@ function SlotCard({ slot, onEdit, onDelete }: SlotCardProps) {
             {slot.required && (
               <Badge variant="outline" className="shrink-0">
                 Обязательный
+              </Badge>
+            )}
+            {hasError && (
+              <Badge variant="destructive" className="shrink-0 text-[10px]">
+                Ошибка
+              </Badge>
+            )}
+            {!hasError && hasWarning && (
+              <Badge
+                variant="outline"
+                className="shrink-0 text-[10px] border-amber-400 text-amber-700 dark:text-amber-300"
+              >
+                Предупреждение
               </Badge>
             )}
           </div>

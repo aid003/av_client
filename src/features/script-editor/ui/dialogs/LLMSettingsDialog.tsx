@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, HelpCircle } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { ChevronDown, ChevronRight, HelpCircle, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Input } from '@/shared/ui/components/ui/input';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Slider } from '@/shared/ui/components/ui/slider';
 import { Switch } from '@/shared/ui/components/ui/switch';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
+import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -28,19 +29,22 @@ import {
   TooltipTrigger,
 } from '@/shared/ui/components/ui/tooltip';
 import { ModelSelect } from '../llm-settings/ModelSelect';
-import { getLlmMetadata } from '@/entities/sales-script/api';
+import { getLlmMetadata, deleteScriptState } from '@/entities/sales-script/api';
 import {
   useScriptEditorLlmSettings,
   useScriptEditorAutoFillSlots,
   useScriptEditorReadTiming,
   useScriptEditorActions,
+  useScriptEditorMeta,
 } from '../../model/store';
 import { ReadTimingSettings } from '../read-timing/ReadTimingSettings';
+import { ClearStateDialog } from './ClearStateDialog';
 import type { LlmScriptSettings, LlmMetadataResponse, LlmOperationInfo } from '@/entities/sales-script';
 
 interface LLMSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tenantId: string;
 }
 
 // Дефолтные значения моделей по умолчанию
@@ -53,10 +57,11 @@ const DEFAULT_MODELS: NonNullable<LlmScriptSettings['defaultModels']> = {
   normalizeSlotValue: 'gpt-4o-mini',
 };
 
-export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps) {
+export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsDialogProps) {
   const llmSettings = useScriptEditorLlmSettings();
   const autoFillSlots = useScriptEditorAutoFillSlots();
   const readTiming = useScriptEditorReadTiming();
+  const meta = useScriptEditorMeta();
   const { setLlmSettings, setAutoFillSlotsFromFirstMessage, setReadTiming } = useScriptEditorActions();
 
   // Локальное состояние для редактирования
@@ -74,6 +79,13 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
   const [metadata, setMetadata] = useState<LlmMetadataResponse | null>(null);
   const [showAdvancedModels, setShowAdvancedModels] = useState(false);
   const [showAdvancedPrompts, setShowAdvancedPrompts] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
+
+  // Refs for auto-scroll
+  const advancedModelsRef = useRef<HTMLDivElement>(null);
+  const advancedPromptsRef = useRef<HTMLDivElement>(null);
 
   // Загрузка метаданных при открытии диалога
   useEffect(() => {
@@ -106,6 +118,30 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
       );
     }
   }, [open, llmSettings, autoFillSlots, readTiming]);
+
+  // Auto-scroll to advanced models when expanded
+  useEffect(() => {
+    if (showAdvancedModels && advancedModelsRef.current) {
+      setTimeout(() => {
+        advancedModelsRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }, 100);
+    }
+  }, [showAdvancedModels]);
+
+  // Auto-scroll to advanced prompts when expanded
+  useEffect(() => {
+    if (showAdvancedPrompts && advancedPromptsRef.current) {
+      setTimeout(() => {
+        advancedPromptsRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }, 100);
+    }
+  }, [showAdvancedPrompts]);
 
   // Получить информацию об операции
   const getOperationInfo = (operationId: string): LlmOperationInfo | undefined => {
@@ -157,6 +193,28 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
     setLocalReadTiming(null);
   };
 
+  const handleClearState = async () => {
+    if (!meta.scriptId) return;
+
+    setIsClearing(true);
+    try {
+      await deleteScriptState(meta.scriptId, tenantId);
+      setShowClearConfirm(false);
+      setClearSuccess(true);
+
+      // Auto-close dialog after showing success message
+      setTimeout(() => {
+        setClearSuccess(false);
+        onOpenChange(false);
+      }, 1500);
+    } catch (err) {
+      // Handle error - could show alert
+      console.error('Failed to clear script state:', err);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   // Обновить модель для операции
   const updateModel = (operationId: string, modelId: string | undefined) => {
     setLocalSettings({
@@ -190,25 +248,26 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Настройки LLM</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             Настройте модели и параметры LLM для всего скрипта. Эти настройки будут использоваться
             по умолчанию, если не переопределены в отдельных блоках.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="models" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 gap-1">
+          <TabsList className="grid w-full grid-cols-5 gap-1">
             <TabsTrigger value="models" className="text-xs px-1.5">Модели</TabsTrigger>
             <TabsTrigger value="prompts" className="text-xs px-1.5">Промпты</TabsTrigger>
             <TabsTrigger value="parameters" className="text-xs px-1.5">Параметры</TabsTrigger>
             <TabsTrigger value="readTiming" className="text-xs px-1.5">Прочтение</TabsTrigger>
+            <TabsTrigger value="clear" className="text-xs px-1.5">Очистка</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
             {/* Таб: Модели */}
             <TabsContent value="models" className="space-y-6 mt-0">
               <div className="space-y-4">
-                <h3 className="font-medium text-sm">Основные модели</h3>
+                <h3 className="font-medium text-xs">Основные модели</h3>
 
                 {/* generateReply */}
                 <ModelSelect
@@ -323,7 +382,7 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
                 </button>
 
                 {showAdvancedModels && (
-                  <div className="space-y-4 pl-6 border-l-2">
+                  <div ref={advancedModelsRef} className="space-y-4 pl-6 border-l-2">
                     {/* isAnswerRelevant */}
                     <ModelSelect
                       label={
@@ -379,7 +438,7 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
             {/* Таб: Промпты */}
             <TabsContent value="prompts" className="space-y-6 mt-0">
               <div className="space-y-4">
-                <h3 className="font-medium text-sm">Основные промпты</h3>
+                <h3 className="font-medium text-xs">Основные промпты</h3>
 
                 {/* generateReply prompt */}
                 <div className="space-y-2">
@@ -582,7 +641,7 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
                 </button>
 
                 {showAdvancedPrompts && (
-                  <div className="space-y-4 pl-6 border-l-2">
+                  <div ref={advancedPromptsRef} className="space-y-4 pl-6 border-l-2">
                     {/* isAnswerRelevant prompt */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -682,7 +741,7 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
             {/* Таб: Параметры */}
             <TabsContent value="parameters" className="space-y-6 mt-0">
               <div className="space-y-4">
-                <h3 className="font-medium text-sm">Параметры по умолчанию</h3>
+                <h3 className="font-medium text-xs">Параметры по умолчанию</h3>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -729,7 +788,7 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
 
               {/* Дополнительные настройки */}
               <div className="space-y-4">
-                <h3 className="font-medium text-sm">Дополнительно</h3>
+                <h3 className="font-medium text-xs">Дополнительно</h3>
 
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -779,6 +838,55 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
                 }
               />
             </TabsContent>
+
+            {/* Таб: Очистка */}
+            <TabsContent value="clear" className="space-y-6 mt-0">
+              <div className="space-y-4">
+                {clearSuccess ? (
+                  <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800 dark:text-green-200">
+                      Состояние скрипта успешно очищено!
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Внимание! Эта операция необратима и предназначена для тестирования изменений в скрипте.
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-xs">Сброс для тестирования</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Этот функционал позволяет заново протестировать изменения в скрипте на аккаунтах, которые уже общались с ботом. При очистке:
+                      </p>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-2">
+                        <li>Сбрасывается вся история диалогов со скриптом</li>
+                        <li>Аккаунты смогут начать диалог заново, как в первый раз</li>
+                        <li>Привязки скрипта к чатам сохранятся, автозапуск продолжит работать</li>
+                      </ul>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Используйте эту функцию когда нужно проверить новую версию скрипта на реальных аккаунтах.
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <Button
+                        variant="destructive"
+                        onClick={() => setShowClearConfirm(true)}
+                        disabled={!meta.scriptId || isClearing}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {isClearing ? 'Очистка...' : 'Очистить состояние скрипта'}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
           </div>
         </Tabs>
 
@@ -796,6 +904,14 @@ export function LLMSettingsDialog({ open, onOpenChange }: LLMSettingsDialogProps
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Clear state confirmation dialog */}
+      <ClearStateDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        onConfirm={handleClearState}
+        isClearing={isClearing}
+      />
     </Dialog>
   );
 }

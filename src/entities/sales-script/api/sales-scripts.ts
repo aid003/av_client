@@ -6,12 +6,12 @@ import type {
   SalesScriptListResponse,
   ConstructorSchema,
   ScriptDefinition,
-  ValidationResult,
   ScriptSlot,
   SlotsListResponse,
   AddSlotDto,
   UpdateSlotDto,
   RenameSlotDto,
+  ScriptValidationResult,
 } from '../model/types';
 
 /**
@@ -104,8 +104,8 @@ export async function getConstructorSchema(
  */
 export async function validateScriptDefinition(
   definition: ScriptDefinition
-): Promise<ValidationResult> {
-  return apiClient.post<ValidationResult, { definition: ScriptDefinition }>(
+): Promise<ScriptValidationResult> {
+  return apiClient.post<ScriptValidationResult, { definition: ScriptDefinition }>(
     `/api/sales-scripts/validate`,
     { definition }
   );
@@ -186,6 +186,24 @@ export async function renameSlot(
   return apiClient.put<ScriptSlot, RenameSlotDto>(
     `/api/sales-scripts/${scriptId}/slots/${slotName}/rename`,
     data,
+    { params: { tenantId } }
+  );
+}
+
+// ============================================
+// Script State API
+// ============================================
+
+/**
+ * Удалить состояние выполнения скрипта (ChatScriptState и Lead)
+ */
+export async function deleteScriptState(
+  scriptId: string,
+  tenantId: string
+): Promise<void> {
+  return apiClient.delete<void>(
+    `/api/sales-scripts/${scriptId}/state`,
+    undefined,
     { params: { tenantId } }
   );
 }

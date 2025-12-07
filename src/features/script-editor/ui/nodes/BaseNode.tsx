@@ -1,8 +1,11 @@
 'use client';
 
 import { memo, type ReactNode } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { Handle, Position } from '@xyflow/react';
 import { cn } from '@/shared/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/components/ui/tooltip';
+import type { ValidationIssue } from '@/entities/sales-script';
 
 interface BaseNodeProps {
   children: ReactNode;
@@ -18,6 +21,8 @@ interface BaseNodeProps {
     label?: string;
     style?: React.CSSProperties;
   }>;
+  validationStatus?: 'error' | 'warning';
+  validationIssues?: ValidationIssue[];
 }
 
 export const BaseNode = memo(function BaseNode({
@@ -29,15 +34,56 @@ export const BaseNode = memo(function BaseNode({
   showSourceHandle = true,
   showTargetHandle = true,
   sourceHandles,
+  validationStatus,
+  validationIssues,
 }: BaseNodeProps) {
+  const hasIssues = (validationIssues?.length ?? 0) > 0;
+  const hasError = validationIssues?.some((issue) => issue.severity === 'error');
+  const hasWarning = validationIssues?.some((issue) => issue.severity === 'warning');
+  const indicatorColor = hasError
+    ? 'text-destructive'
+    : hasWarning
+      ? 'text-amber-500 dark:text-amber-400'
+      : 'text-muted-foreground';
+
   return (
     <div
       className={cn(
         'relative bg-background rounded-lg shadow-md border-2 min-w-[180px] max-w-[240px] transition-all',
         selected && 'ring-2 ring-primary ring-offset-2',
-        borderColor
+        validationStatus === 'error'
+          ? 'border-destructive shadow-[0_0_0_2px_rgba(239,68,68,0.12)]'
+          : validationStatus === 'warning'
+            ? 'border-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.16)]'
+            : borderColor
       )}
     >
+      {hasIssues && (
+        <Tooltip>
+          <TooltipTrigger
+            className="absolute top-1 right-1 p-0.5 rounded-full bg-background/80 shadow-sm"
+            aria-label="Показать ошибки блока"
+          >
+            <AlertCircle className={cn('w-4 h-4', indicatorColor)} />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs space-y-1">
+            {validationIssues?.map((issue, index) => (
+              <div
+                key={`${issue.code}-${index}`}
+                className={cn(
+                  'text-xs leading-snug',
+                  issue.severity === 'error'
+                    ? 'text-destructive'
+                    : 'text-amber-600 dark:text-amber-400'
+                )}
+              >
+                {issue.message}
+              </div>
+            ))}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
       {/* Target Handle */}
       {showTargetHandle && (
         <Handle

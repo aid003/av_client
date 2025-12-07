@@ -23,8 +23,9 @@ export type {
   BlockTypeSchema,
   ConstructorSchema,
   // Validation
-  ValidationError,
-  ValidationResult,
+  ValidationIssueContext,
+  ValidationIssue,
+  ScriptValidationResult,
   // Sales Script Entity
   SalesScript,
   CreateSalesScriptDto,

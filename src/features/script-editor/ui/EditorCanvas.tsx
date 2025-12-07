@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type DragEvent } from 'react';
 import {
   ReactFlow,
   Background,
@@ -22,6 +22,7 @@ import {
   useScriptEditorEdges,
   useScriptEditorActions,
   useScriptEditorStore,
+  useScriptEditorValidation,
 } from '../model/store';
 import type { ScriptBlockType } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge } from '../model/types';
@@ -30,6 +31,7 @@ import { cn } from '@/shared/lib/utils';
 export function EditorCanvas() {
   const nodes = useScriptEditorNodes();
   const edges = useScriptEditorEdges();
+  const validation = useScriptEditorValidation();
   const {
     onNodesChange,
     onEdgesChange,
@@ -188,11 +190,33 @@ export function EditorCanvas() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [copySelectedNodes, pasteNodes]);
 
+  const edgesWithValidation: ScriptFlowEdge[] = useMemo(() => {
+    return edges.map((edge) => {
+      const edgeId = edge.data?.edgeId ?? edge.id;
+      const issues = validation.byEdgeId[edgeId] || [];
+      const hasError = issues.some((issue) => issue.severity === 'error');
+      const hasWarning = issues.some((issue) => issue.severity === 'warning');
+
+      const stroke = hasError ? '#ef4444' : hasWarning ? '#f59e0b' : edge.style?.stroke;
+      const strokeWidth = hasError || hasWarning ? 2.5 : edge.style?.strokeWidth;
+
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          stroke,
+          strokeWidth,
+        },
+        animated: hasError ? true : edge.animated,
+      } as ScriptFlowEdge;
+    });
+  }, [edges, validation.byEdgeId]);
+
   return (
     <div ref={reactFlowWrapper} className="w-full h-full">
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={edgesWithValidation}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -213,7 +237,7 @@ export function EditorCanvas() {
         selectionOnDrag={true}
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode="Meta"
-        deleteKeyCode="Delete"
+        deleteKeyCode={['Delete', 'Backspace']}
         onMoveStart={onMoveStart}
         onMoveEnd={onMoveEnd}
         defaultEdgeOptions={{

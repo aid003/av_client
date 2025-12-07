@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Loader2,
   Database,
-  Brain,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Badge } from '@/shared/ui/components/ui/badge';
@@ -24,7 +24,7 @@ import {
   updateSalesScript,
   validateScriptDefinition,
   useSalesScriptsActions,
-  type ValidationResult,
+  type ScriptValidationResult,
 } from '@/entities/sales-script';
 import { SlotsManagementDialog } from './dialogs/SlotsManagementDialog';
 import { LLMSettingsDialog } from './dialogs/LLMSettingsDialog';
@@ -38,10 +38,18 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const router = useRouter();
   const meta = useScriptEditorMeta();
   const status = useScriptEditorStatus();
-  const { getDefinition, setSaving, setError, markClean, initFromDefinition } = useScriptEditorActions();
+  const {
+    getDefinition,
+    setSaving,
+    setError,
+    markClean,
+    initFromDefinition,
+    setValidationResult: setValidationResultInStore,
+    clearValidation,
+  } = useScriptEditorActions();
   const { addSalesScript } = useSalesScriptsActions();
 
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [validationResult, setValidationResult] = useState<ScriptValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showSlotsDialog, setShowSlotsDialog] = useState(false);
   const [showLLMSettingsDialog, setShowLLMSettingsDialog] = useState(false);
@@ -84,6 +92,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
     setSaving(true);
     setError(null);
     setValidationResult(null); // Очищаем результат валидации при сохранении
+    clearValidation();
 
     try {
       const definition = getDefinition();
@@ -144,28 +153,37 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const handleValidate = async () => {
     setIsValidating(true);
     setValidationResult(null);
+    clearValidation();
 
     try {
       const definition = getDefinition();
       const result = await validateScriptDefinition(definition);
 
-      // Если API вернул пустой объект или объект без ошибок - считаем валидным
-      const normalizedResult: ValidationResult = {
-        valid: !result.errors || result.errors.length === 0,
+      const normalizedResult: ScriptValidationResult = {
+        isValid:
+          typeof result.isValid === 'boolean'
+            ? result.isValid
+            : !result.errors || result.errors.length === 0,
         errors: result.errors || [],
+        warnings: result.warnings || [],
       };
 
       setValidationResult(normalizedResult);
+      setValidationResultInStore(normalizedResult);
     } catch (err) {
-      setValidationResult({
-        valid: false,
+      const fallback: ScriptValidationResult = {
+        isValid: false,
         errors: [
           {
-            path: '',
+            severity: 'error',
+            code: 'CLIENT_VALIDATION_ERROR',
             message: err instanceof Error ? err.message : 'Ошибка валидации',
           },
         ],
-      });
+        warnings: [],
+      };
+      setValidationResult(fallback);
+      setValidationResultInStore(fallback);
     } finally {
       setIsValidating(false);
     }
@@ -203,14 +221,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
         {(validationResult || status.error) && (
           <div className="flex items-center gap-1.5 mr-2">
             {validationResult ? (
-              validationResult.valid ? (
-                <>
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-600 dark:text-green-400">
-                    Скрипт валиден
-                  </span>
-                </>
-              ) : validationResult.errors.length > 0 ? (
+              validationResult.errors.length > 0 ? (
                 <>
                   <AlertCircle className="w-4 h-4 text-destructive" />
                   <span className="text-sm text-destructive">
@@ -218,8 +229,29 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
                       ? '1 ошибка'
                       : `${validationResult.errors.length} ошибок`}
                   </span>
+                  {validationResult.warnings.length > 0 && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      + {validationResult.warnings.length} предупрежд.
+                    </span>
+                  )}
                 </>
-              ) : null
+              ) : validationResult.warnings.length > 0 ? (
+                <>
+                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm text-amber-600 dark:text-amber-400">
+                    {validationResult.warnings.length === 1
+                      ? '1 предупреждение'
+                      : `${validationResult.warnings.length} предупреждений`}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600 dark:text-green-400">
+                    Скрипт валиден
+                  </span>
+                </>
+              )
             ) : status.error ? (
               <>
                 <AlertCircle className="w-4 h-4 text-destructive" />
@@ -240,15 +272,15 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
           Слоты
         </Button>
 
-        {/* LLM Settings button */}
+        {/* Settings button */}
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowLLMSettingsDialog(true)}
-          title="Настройки LLM"
+          title="Настройки"
         >
-          <Brain className="w-4 h-4 mr-2" />
-          Настройки LLM
+          <Settings className="w-4 h-4 mr-2" />
+          Настройки
         </Button>
 
         {/* Validate button */}
@@ -291,6 +323,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
       <LLMSettingsDialog
         open={showLLMSettingsDialog}
         onOpenChange={setShowLLMSettingsDialog}
+        tenantId={tenantId}
       />
 
       {/* Unsaved changes dialog */}

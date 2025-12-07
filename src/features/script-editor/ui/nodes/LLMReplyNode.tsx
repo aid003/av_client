@@ -6,6 +6,7 @@ import { Sparkles, BookOpen } from 'lucide-react';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { BaseNode } from './BaseNode';
 import type { ScriptNode } from '../../model/types';
+import { useScriptEditorValidation } from '../../model/store';
 import type { LLMReplyBlockConfig } from '@/entities/sales-script';
 
 type LLMReplyNodeProps = NodeProps<ScriptNode>;
@@ -14,6 +15,11 @@ export const LLMReplyNode = memo(function LLMReplyNode({
   data,
   selected,
 }: LLMReplyNodeProps) {
+  const { byBlockId } = useScriptEditorValidation();
+  const issues = byBlockId[data.blockId] || [];
+  const hasError = issues.some((issue) => issue.severity === 'error');
+  const hasWarning = issues.some((issue) => issue.severity === 'warning');
+  const validationStatus = hasError ? 'error' : hasWarning ? 'warning' : undefined;
   const config = data.config as LLMReplyBlockConfig;
 
   return (
@@ -22,12 +28,14 @@ export const LLMReplyNode = memo(function LLMReplyNode({
       iconBgColor="bg-gradient-to-br from-violet-500 to-purple-600"
       borderColor="border-violet-200 dark:border-violet-800"
       selected={selected}
+      validationStatus={validationStatus}
+      validationIssues={issues}
     >
       <div className="space-y-1.5">
         <div className="flex items-center gap-1.5">
           <div className="font-medium text-sm truncate flex-1">{data.title}</div>
           {config.useKnowledgeBase && (
-            <BookOpen className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           )}
         </div>
         {config.instruction && (

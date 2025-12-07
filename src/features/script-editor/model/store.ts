@@ -14,6 +14,8 @@ import type {
   EdgeConditionType,
   ConstructorSchema,
   LlmScriptSettings,
+  ValidationIssue,
+  ScriptValidationResult,
 } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge, SelectionState, PopoverState } from './types';
 import {
@@ -62,6 +64,15 @@ interface ScriptEditorState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+
+  // Валидация
+  validation: {
+    errors: ValidationIssue[];
+    warnings: ValidationIssue[];
+    byBlockId: Record<string, ValidationIssue[]>;
+    byEdgeId: Record<string, ValidationIssue[]>;
+    bySlotName: Record<string, ValidationIssue[]>;
+  };
 
   // Actions - Инициализация
   initFromDefinition: (
@@ -139,6 +150,8 @@ interface ScriptEditorState {
   setSaving: (saving: boolean) => void;
   setError: (error: string | null) => void;
   markClean: () => void;
+  setValidationResult: (result: ScriptValidationResult | null) => void;
+  clearValidation: () => void;
 
   // Getters
   getDefinition: () => ScriptDefinition;
@@ -171,6 +184,49 @@ const initialState = {
   isLoading: false,
   isSaving: false,
   error: null,
+  validation: {
+    errors: [],
+    warnings: [],
+    byBlockId: {},
+    byEdgeId: {},
+    bySlotName: {},
+  },
+};
+
+const buildIssueMaps = (issues: ValidationIssue[]) => {
+  const byBlockId: Record<string, ValidationIssue[]> = {};
+  const byEdgeId: Record<string, ValidationIssue[]> = {};
+  const bySlotName: Record<string, ValidationIssue[]> = {};
+
+  issues.forEach((issue) => {
+    const normalizedSeverity =
+      issue.severity === 'warning' || issue.severity === 'error' ? issue.severity : 'error';
+    const normalizedIssue: ValidationIssue = { ...issue, severity: normalizedSeverity };
+    const ctx = issue.context || {};
+
+    const blockIds: string[] = [];
+    if (ctx.blockId && typeof ctx.blockId === 'string') {
+      blockIds.push(ctx.blockId);
+    }
+    if (Array.isArray((ctx as Record<string, unknown>).blockIds)) {
+      const list = (ctx as Record<string, unknown>).blockIds as unknown[];
+      list.forEach((id) => {
+        if (typeof id === 'string') blockIds.push(id);
+      });
+    }
+    blockIds.forEach((id) => {
+      byBlockId[id] = [...(byBlockId[id] || []), normalizedIssue];
+    });
+
+    if (ctx.edgeId && typeof ctx.edgeId === 'string') {
+      byEdgeId[ctx.edgeId] = [...(byEdgeId[ctx.edgeId] || []), normalizedIssue];
+    }
+    if (ctx.slotName && typeof ctx.slotName === 'string') {
+      bySlotName[ctx.slotName] = [...(bySlotName[ctx.slotName] || []), normalizedIssue];
+    }
+  });
+
+  return { byBlockId, byEdgeId, bySlotName };
 };
 
 export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
@@ -239,6 +295,15 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     set((state) => ({
       nodes: applyNodeChanges(changes, state.nodes),
       isDirty: hasSignificantChanges ? true : state.isDirty,
+      validation: hasSignificantChanges
+        ? {
+            errors: [],
+            warnings: [],
+            byBlockId: {},
+            byEdgeId: {},
+            bySlotName: {},
+          }
+        : state.validation,
     }));
   },
 
@@ -296,6 +361,15 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     set((state) => ({
       edges: applyEdgeChanges(changes, state.edges),
       isDirty: hasSignificantChanges ? true : state.isDirty,
+      validation: hasSignificantChanges
+        ? {
+            errors: [],
+            warnings: [],
+            byBlockId: {},
+            byEdgeId: {},
+            bySlotName: {},
+          }
+        : state.validation,
     }));
   },
 
@@ -621,6 +695,43 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     set({ isDirty: false });
   },
 
+  setValidationResult: (result) => {
+    if (!result) {
+      set({
+        validation: {
+          errors: [],
+          warnings: [],
+          byBlockId: {},
+          byEdgeId: {},
+          bySlotName: {},
+        },
+      });
+      return;
+    }
+
+    const maps = buildIssueMaps([...result.errors, ...result.warnings]);
+
+    set({
+      validation: {
+        errors: result.errors,
+        warnings: result.warnings,
+        ...maps,
+      },
+    });
+  },
+
+  clearValidation: () => {
+    set({
+      validation: {
+        errors: [],
+        warnings: [],
+        byBlockId: {},
+        byEdgeId: {},
+        bySlotName: {},
+      },
+    });
+  },
+
   // ========================================
   // Getters
   // ========================================
@@ -700,6 +811,17 @@ export const useScriptEditorStatus = () =>
     }))
   );
 
+export const useScriptEditorValidation = () =>
+  useScriptEditorStore(
+    useShallow((state) => ({
+      errors: state.validation.errors,
+      warnings: state.validation.warnings,
+      byBlockId: state.validation.byBlockId,
+      byEdgeId: state.validation.byEdgeId,
+      bySlotName: state.validation.bySlotName,
+    }))
+  );
+
 export const useScriptEditorActions = () =>
   useScriptEditorStore(
     useShallow((state) => ({
@@ -738,6 +860,8 @@ export const useScriptEditorActions = () =>
       setSaving: state.setSaving,
       setError: state.setError,
       markClean: state.markClean,
+      setValidationResult: state.setValidationResult,
+      clearValidation: state.clearValidation,
       getDefinition: state.getDefinition,
       getSelectedNode: state.getSelectedNode,
       getSelectedEdge: state.getSelectedEdge,

@@ -2,10 +2,12 @@
 
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, AlertCircle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ScriptNode } from '../../model/types';
+import { useScriptEditorValidation } from '../../model/store';
 import type { RouterBlockConfig } from '@/entities/sales-script';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/components/ui/tooltip';
 
 type RouterNodeProps = NodeProps<ScriptNode>;
 
@@ -13,16 +15,57 @@ export const RouterNode = memo(function RouterNode({
   data,
   selected,
 }: RouterNodeProps) {
+  const { byBlockId } = useScriptEditorValidation();
+  const issues = byBlockId[data.blockId] || [];
+  const hasError = issues.some((issue) => issue.severity === 'error');
+  const hasWarning = issues.some((issue) => issue.severity === 'warning');
+  const validationStatus = hasError ? 'error' : hasWarning ? 'warning' : undefined;
   const config = data.config as RouterBlockConfig;
+  const hasIssues = issues.length > 0;
+  const indicatorColor = hasError
+    ? 'text-destructive'
+    : hasWarning
+      ? 'text-amber-500 dark:text-amber-400'
+      : 'text-muted-foreground';
 
   return (
     <div
       className={cn(
         'relative bg-background rounded-lg shadow-md border-2 min-w-[200px] transition-all',
-        'border-purple-300 dark:border-purple-700',
+        validationStatus === 'error'
+          ? 'border-destructive shadow-[0_0_0_2px_rgba(239,68,68,0.12)]'
+          : validationStatus === 'warning'
+            ? 'border-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.16)]'
+            : 'border-purple-300 dark:border-purple-700',
         selected && 'ring-2 ring-primary ring-offset-2'
       )}
     >
+      {hasIssues && (
+        <Tooltip>
+          <TooltipTrigger
+            className="absolute top-1 right-1 p-0.5 rounded-full bg-background/80 shadow-sm"
+            aria-label="Показать ошибки блока"
+          >
+            <AlertCircle className={cn('w-4 h-4', indicatorColor)} />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs space-y-1">
+            {issues.map((issue, index) => (
+              <div
+                key={`${issue.code}-${index}`}
+                className={cn(
+                  'text-xs leading-snug',
+                  issue.severity === 'error'
+                    ? 'text-destructive'
+                    : 'text-amber-600 dark:text-amber-400'
+                )}
+              >
+                {issue.message}
+              </div>
+            ))}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
       {/* Target Handle */}
       <Handle
         type="target"
@@ -32,7 +75,7 @@ export const RouterNode = memo(function RouterNode({
 
       {/* Header */}
       <div className="flex items-start gap-3 p-3 border-b border-purple-200 dark:border-purple-800">
-        <div className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-white bg-purple-500">
+        <div className="shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-white bg-purple-500">
           <GitBranch className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">

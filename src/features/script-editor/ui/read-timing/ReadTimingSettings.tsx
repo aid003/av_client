@@ -64,7 +64,7 @@ export function ReadTimingSettings({
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="font-medium text-sm">Задержки времени прочтения</h3>
+        <h3 className="font-medium text-xs">Задержки времени прочтения</h3>
         <p className="text-xs text-muted-foreground">
           Настройте время, которое система будет ждать перед отправкой следующего сообщения,
           имитируя время прочтения предыдущего сообщения пользователем.
@@ -74,7 +74,7 @@ export function ReadTimingSettings({
       {/* Первое сообщение */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Задержка для первого сообщения: {formatDelay(firstMessageDelaySeconds)}</Label>
+          <Label className="text-sm">Задержка для первого сообщения: {formatDelay(firstValue)}</Label>
         </div>
         <Slider
           value={[firstSliderValue]}
@@ -102,7 +102,7 @@ export function ReadTimingSettings({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm">
-            Задержка для последующих сообщений: {formatDelay(subsequentMessageDelaySeconds)}
+            Задержка для последующих сообщений: {formatDelay(subsequentValue)}
           </Label>
         </div>
         <Slider

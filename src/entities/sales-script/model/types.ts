@@ -222,14 +222,24 @@ export interface ConstructorSchema {
 // Validation Types
 // ============================================
 
-export interface ValidationError {
-  path: string;
-  message: string;
+export interface ValidationIssueContext {
+  blockId?: string;
+  edgeId?: string;
+  slotName?: string;
+  [key: string]: unknown;
 }
 
-export interface ValidationResult {
-  valid: boolean;
-  errors: ValidationError[];
+export interface ValidationIssue {
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+  context?: ValidationIssueContext;
+}
+
+export interface ScriptValidationResult {
+  isValid: boolean;
+  errors: ValidationIssue[];
+  warnings: ValidationIssue[];
 }
 
 // ============================================
