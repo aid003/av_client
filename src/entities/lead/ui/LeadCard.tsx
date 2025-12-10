@@ -23,29 +23,29 @@ interface LeadCardProps {
 export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Информация о лиде</CardTitle>
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-base sm:text-lg">Информация о лиде</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Клиент:</span>
-            <span>{lead.clientName || '—'}</span>
+      <CardContent className="space-y-3 sm:space-y-4 pt-0">
+        <div className="grid gap-2 sm:gap-3">
+          <div className="flex items-start gap-2 sm:gap-2.5 text-sm sm:text-base">
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <span className="font-medium shrink-0">Клиент:</span>
+            <span className="break-words">{lead.clientName || '—'}</span>
           </div>
 
           {lead.scriptName && (
-            <div className="flex items-center gap-2">
-              <FileCode className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Скрипт:</span>
-              <span>{lead.scriptName}</span>
+            <div className="flex items-start gap-2 sm:gap-2.5 text-sm sm:text-base">
+              <FileCode className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <span className="font-medium shrink-0">Скрипт:</span>
+              <span className="break-words">{lead.scriptName}</span>
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Последнее сообщение:</span>
-            <span>
+          <div className="flex items-start gap-2 sm:gap-2.5 text-sm sm:text-base">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <span className="font-medium shrink-0">Последнее сообщение:</span>
+            <span className="break-words">
               {new Date(lead.lastMessageAt).toLocaleString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
@@ -59,22 +59,22 @@ export function LeadCard({ lead, showChatLink = false }: LeadCardProps) {
           {showChatLink && lead.avitoChatId && (
             <Link
               href={`/chats?chatId=${lead.avitoChatId}`}
-              className="flex items-center gap-2 text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base text-primary hover:underline"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Перейти к чату</span>
             </Link>
           )}
         </div>
 
         {lead.slots && Object.keys(lead.slots).length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="font-medium mb-2">Собранные данные:</h4>
-            <div className="grid gap-2">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
+            <h4 className="font-medium mb-2 sm:mb-2.5 text-sm sm:text-base">Собранные данные:</h4>
+            <div className="grid gap-2 sm:gap-2.5">
               {getSlotEntries(lead.slots).map(({ key, value }) => (
-                <div key={key} className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">{getSlotLabel(key)}:</span>
-                  <span className="font-medium">{formatSlotValue(value)}</span>
+                <div key={key} className="flex items-start gap-2 text-xs sm:text-sm">
+                  <span className="text-muted-foreground shrink-0">{getSlotLabel(key)}:</span>
+                  <span className="font-medium break-words flex-1">{formatSlotValue(value)}</span>
                   {typeof value === 'string' && (
                     <CopyButton text={value} size="sm" variant="ghost" />
                   )}

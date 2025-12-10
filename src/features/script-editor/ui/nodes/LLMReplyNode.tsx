@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Sparkles, BookOpen } from 'lucide-react';
+import { Sparkles, BookOpen, Clock } from 'lucide-react';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { BaseNode } from './BaseNode';
 import type { ScriptNode } from '../../model/types';
@@ -10,6 +10,17 @@ import { useScriptEditorValidation } from '../../model/store';
 import type { LLMReplyBlockConfig } from '@/entities/sales-script';
 
 type LLMReplyNodeProps = NodeProps<ScriptNode>;
+
+function formatDelay(seconds: number | undefined): string {
+  if (seconds === undefined || seconds === 0) return '';
+  if (seconds < 60) return `${seconds}с`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (remainingSeconds === 0) return `${minutes}м`;
+  return `${minutes}м ${remainingSeconds}с`;
+}
 
 export const LLMReplyNode = memo(function LLMReplyNode({
   data,
@@ -43,18 +54,12 @@ export const LLMReplyNode = memo(function LLMReplyNode({
             {config.instruction}
           </div>
         )}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {config.style && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              {config.style === 'SHORT' ? 'Кратко' : config.style === 'DETAILED' ? 'Подробно' : 'Обычно'}
-            </Badge>
-          )}
-          {config.temperature !== undefined && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              t={config.temperature}
-            </Badge>
-          )}
-        </div>
+        {config.delaySeconds !== undefined && config.delaySeconds > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            <Clock />
+            {formatDelay(config.delaySeconds)}
+          </Badge>
+        )}
       </div>
     </BaseNode>
   );

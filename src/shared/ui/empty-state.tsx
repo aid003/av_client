@@ -32,18 +32,18 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   return (
-    <div className={`flex items-center justify-center min-h-[400px] ${className || ''}`}>
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6 pb-6 text-center space-y-4">
+    <div className={`flex items-center justify-center min-h-[250px] sm:min-h-[350px] md:min-h-[400px] px-4 ${className || ''}`}>
+      <Card className="w-full max-w-sm sm:max-w-md">
+        <CardContent className="pt-4 pb-4 sm:pt-6 sm:pb-6 text-center space-y-3 sm:space-y-4">
           {icon && (
-            <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+            <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
               {icon}
             </div>
           )}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">{title}</h3>
+          <div className="space-y-1.5 sm:space-y-2">
+            <h3 className="text-base sm:text-lg font-semibold">{title}</h3>
             {description && (
-              <p className="text-sm text-muted-foreground mb-4">{description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{description}</p>
             )}
           </div>
           {action && <div>{action}</div>}

@@ -7,6 +7,7 @@ export {
   EditorHeader,
   BlocksPalette,
   PropertiesPanel,
+  GlobalValidationErrors,
   nodeTypes,
 } from './ui';
 

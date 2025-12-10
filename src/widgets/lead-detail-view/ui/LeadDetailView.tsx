@@ -21,20 +21,20 @@ export function LeadDetailView({
     <div className="flex flex-col h-full">
       {/* Header */}
       {showBackButton && (
-        <div className="px-4 py-3 border-b shrink-0">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b shrink-0">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-1.5 sm:mr-2" />
             Назад
           </Button>
         </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
         <LeadCard lead={lead} showChatLink={true} />
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:gap-2.5 flex-wrap">
           <EditLeadDialog lead={lead} tenantId={lead.tenantId} />
           <DeleteLeadButton
             lead={lead}

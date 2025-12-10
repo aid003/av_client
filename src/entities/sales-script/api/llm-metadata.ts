@@ -113,6 +113,7 @@ const MOCK_LLM_METADATA: LlmMetadataResponse = {
 // Кэш метаданных для избежания повторных запросов
 let metadataCache: LlmMetadataResponse | null = null;
 let cacheTimestamp: number | null = null;
+let inFlightRequest: Promise<LlmMetadataResponse> | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
 
 /**
@@ -130,9 +131,16 @@ export async function getLlmMetadata(forceRefresh = false): Promise<LlmMetadataR
     }
   }
 
+  // Если запрос уже выполняется и не требуется принудительный refetch — возвращаем тот же промис
+  if (!forceRefresh && inFlightRequest) {
+    return inFlightRequest;
+  }
+
   try {
+    inFlightRequest = apiClient.get<LlmMetadataResponse>('/api/llm/metadata');
+
     // Пытаемся получить с бэкенда
-    const response = await apiClient.get<LlmMetadataResponse>('/api/llm/metadata');
+    const response = await inFlightRequest;
     
     // Проверяем валидность ответа
     if (!response || !response.availableModels || !Array.isArray(response.availableModels)) {
@@ -165,6 +173,8 @@ export async function getLlmMetadata(forceRefresh = false): Promise<LlmMetadataR
 
     // Возвращаем mock данные как fallback
     return Promise.resolve(MOCK_LLM_METADATA);
+  } finally {
+    inFlightRequest = null;
   }
 }
 

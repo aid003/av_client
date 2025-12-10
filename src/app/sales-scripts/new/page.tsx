@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
+import { useSidebar } from '@/shared/ui/components/ui/sidebar';
 import { ScriptEditor } from '@/widgets/script-editor';
 import type { SalesScript } from '@/entities/sales-script';
 
@@ -19,6 +20,8 @@ export default function NewScriptPage() {
 
   const [newScriptData, setNewScriptData] = useState<NewScriptData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { open, setOpen } = useSidebar();
+  const hasClosedSidebarRef = useRef(false);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -54,6 +57,19 @@ export default function NewScriptPage() {
       localStorage.removeItem('newScriptData');
     }
   }, [authData, isAuthenticated, isAuthLoading, router]);
+
+  // Автоматическое сворачивание sidebar при открытии редактора
+  useEffect(() => {
+    if (!hasClosedSidebarRef.current && open) {
+      setOpen(false);
+      hasClosedSidebarRef.current = true;
+    }
+
+    return () => {
+      hasClosedSidebarRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Запускаем только при монтировании
 
   if (isAuthLoading) {
     return (

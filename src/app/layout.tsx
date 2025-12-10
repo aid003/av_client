@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/shared/ui/globals.css";
 import { Providers } from "@/shared/providers/Providers";
+import { ToastContainer } from "@/widgets/notification-center";
 
 export const metadata: Metadata = {
   title: "app",
@@ -13,9 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
-      <body>
-        <Providers>{children}</Providers>
+    <html lang="ru" className="overflow-x-hidden">
+      <body className="overflow-x-hidden">
+        <Providers>
+          {children}
+          <ToastContainer />
+        </Providers>
       </body>
     </html>
   );

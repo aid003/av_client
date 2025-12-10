@@ -51,6 +51,12 @@ interface ScriptEditorState {
     subsequentMessageDelaySeconds?: number;
   } | null;
 
+  // Настройки агрегации сообщений
+  messageAggregation: {
+    enabled?: boolean;
+    windowSeconds?: number;
+  } | null;
+
   // Схема конструктора
   constructorSchema: ConstructorSchema | null;
 
@@ -121,6 +127,12 @@ interface ScriptEditorState {
     subsequentMessageDelaySeconds?: number;
   } | null) => void;
 
+  // Actions - Message Aggregation
+  setMessageAggregation: (messageAggregation: {
+    enabled?: boolean;
+    windowSeconds?: number;
+  } | null) => void;
+
   // Actions - Selection
   setSelection: (selection: SelectionState) => void;
   clearSelection: () => void;
@@ -170,6 +182,7 @@ const initialState = {
   llmSettings: null,
   autoFillSlotsFromFirstMessage: false,
   readTiming: null,
+  messageAggregation: null,
   constructorSchema: null,
   selection: { type: 'none' } as SelectionState,
   popover: {
@@ -249,6 +262,7 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       llmSettings: definition.meta.llmSettings || null,
       autoFillSlotsFromFirstMessage: definition.meta.autoFillSlotsFromFirstMessage || false,
       readTiming: definition.meta.readTiming || null,
+      messageAggregation: definition.meta.messageAggregation || null,
       selection: { type: 'none' },
       isDirty: false,
       error: null,
@@ -495,6 +509,10 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
 
   setReadTiming: (readTiming) => {
     set({ readTiming, isDirty: true });
+  },
+
+  setMessageAggregation: (messageAggregation) => {
+    set({ messageAggregation, isDirty: true });
   },
 
   // ========================================
@@ -745,6 +763,7 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       llmSettings: state.llmSettings || undefined,
       autoFillSlotsFromFirstMessage: state.autoFillSlotsFromFirstMessage || undefined,
       readTiming: state.readTiming || undefined,
+      messageAggregation: state.messageAggregation || undefined,
     });
   },
 
@@ -784,6 +803,9 @@ export const useScriptEditorAutoFillSlots = () =>
 
 export const useScriptEditorReadTiming = () =>
   useScriptEditorStore((state) => state.readTiming);
+
+export const useScriptEditorMessageAggregation = () =>
+  useScriptEditorStore((state) => state.messageAggregation);
 
 export const useScriptEditorSelection = () =>
   useScriptEditorStore((state) => state.selection);
@@ -844,6 +866,7 @@ export const useScriptEditorActions = () =>
       setLlmSettings: state.setLlmSettings,
       setAutoFillSlotsFromFirstMessage: state.setAutoFillSlotsFromFirstMessage,
       setReadTiming: state.setReadTiming,
+      setMessageAggregation: state.setMessageAggregation,
       setSelection: state.setSelection,
       clearSelection: state.clearSelection,
       copySelectedNode: state.copySelectedNode,

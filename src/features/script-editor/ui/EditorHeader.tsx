@@ -25,13 +25,36 @@ import {
   validateScriptDefinition,
   useSalesScriptsActions,
   type ScriptValidationResult,
+  type ValidationError,
+  type ValidationErrorResponse,
+  type ValidationIssue,
 } from '@/entities/sales-script';
+import { ApiError } from '@/shared/api';
 import { SlotsManagementDialog } from './dialogs/SlotsManagementDialog';
 import { LLMSettingsDialog } from './dialogs/LLMSettingsDialog';
 import { UnsavedChangesDialog } from './dialogs/UnsavedChangesDialog';
 
 interface EditorHeaderProps {
   tenantId: string;
+}
+
+/**
+ * Преобразует ValidationError[] в ValidationIssue[]
+ */
+function convertValidationErrorsToIssues(
+  errors: ValidationError[]
+): { errors: ValidationIssue[]; warnings: ValidationIssue[] } {
+  const issues: ValidationIssue[] = errors.map((error) => ({
+    severity: 'error' as const,
+    code: error.code,
+    message: error.message,
+    context: error.blockId ? { blockId: error.blockId } : undefined,
+  }));
+
+  return {
+    errors: issues,
+    warnings: [],
+  };
 }
 
 export function EditorHeader({ tenantId }: EditorHeaderProps) {
@@ -144,7 +167,25 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
         markClean();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
+      // Обработка ошибок валидации от API (400)
+      if (err instanceof ApiError && err.status === 400 && err.data) {
+        const errorData = err.data as ValidationErrorResponse;
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          // Преобразуем и устанавливаем ошибки валидации
+          const { errors, warnings } = convertValidationErrorsToIssues(errorData.errors);
+          setValidationResultInStore({ isValid: false, errors, warnings });
+
+          // Показываем общее сообщение об ошибках
+          setError(
+            `Обнаружено ${errorData.errors.length} ${errorData.errors.length === 1 ? 'ошибка' : 'ошибок'} валидации`
+          );
+        } else {
+          // Обычная ошибка 400 без массива errors
+          setError(errorData.message || err.message || 'Ошибка при сохранении');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
+      }
     } finally {
       setSaving(false);
     }

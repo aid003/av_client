@@ -244,29 +244,46 @@ export function ViewChunksDialog({
           )}
 
           {/* Поиск */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Поиск по тексту чанков..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по тексту чанков..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {filteredChunks.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+                className="shrink-0"
+              >
+                {selectedChunkIds.size === filteredChunks.length
+                  ? 'Снять выделение'
+                  : searchQuery
+                    ? 'Выбрать все (поиск)'
+                    : 'Выбрать все'}
+              </Button>
+            )}
           </div>
 
           {/* Кнопка удаления выбранных */}
           {selectedChunkIds.size > 0 && (
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+              <span className="text-muted-foreground">
                 Выбрано: {selectedChunkIds.size}
               </span>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={handleDeleteSelected}
+                className="gap-1.5"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Удалить выбранные
+                <Trash2 className="h-4 w-4" />
+                Удалить
               </Button>
             </div>
           )}
@@ -347,17 +364,18 @@ export function ViewChunksDialog({
 
           {/* Пагинация */}
           {totalPages > 1 && !searchQuery && (
-            <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center justify-between gap-2 border-t pt-3 text-sm">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1 || isLoading}
+                className="gap-1"
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className="h-4 w-4" />
                 Назад
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground">
                 Страница {currentPage} из {totalPages}
               </span>
               <Button
@@ -367,25 +385,10 @@ export function ViewChunksDialog({
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages || isLoading}
+                className="gap-1"
               >
                 Вперёд
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          )}
-
-          {/* Кнопка "Выбрать все" */}
-          {filteredChunks.length > 0 && (
-            <div className="pt-2 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                className="w-full"
-              >
-                {selectedChunkIds.size === filteredChunks.length
-                  ? 'Снять выделение'
-                  : `Выбрать все${searchQuery ? ' (в результатах поиска)' : ' на странице'}`}
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}

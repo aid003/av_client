@@ -6,6 +6,7 @@ import {
   EditorCanvas,
   EditorHeader,
   BlocksPalette,
+  GlobalValidationErrors,
   useScriptEditorActions,
   useScriptEditorNodes,
   useScriptEditorStore,
@@ -108,8 +109,9 @@ export function ScriptEditor({
           </div>
 
           {/* Center - Canvas */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <EditorCanvas />
+            <GlobalValidationErrors />
           </div>
         </div>
       </div>

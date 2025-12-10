@@ -13,7 +13,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/components/ui/dialog';
@@ -34,6 +33,7 @@ import {
   useScriptEditorLlmSettings,
   useScriptEditorAutoFillSlots,
   useScriptEditorReadTiming,
+  useScriptEditorMessageAggregation,
   useScriptEditorActions,
   useScriptEditorMeta,
 } from '../../model/store';
@@ -57,12 +57,25 @@ const DEFAULT_MODELS: NonNullable<LlmScriptSettings['defaultModels']> = {
   normalizeSlotValue: 'gpt-4o-mini',
 };
 
+// Функция для форматирования задержек
+function formatDelay(seconds: number | undefined): string {
+  if (seconds === undefined || seconds === 0) return 'сразу';
+  if (seconds < 60) return `${seconds} сек`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (remainingSeconds === 0) return `${minutes} мин`;
+  return `${minutes} мин ${remainingSeconds} сек`;
+}
+
 export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsDialogProps) {
   const llmSettings = useScriptEditorLlmSettings();
   const autoFillSlots = useScriptEditorAutoFillSlots();
   const readTiming = useScriptEditorReadTiming();
+  const messageAggregation = useScriptEditorMessageAggregation();
   const meta = useScriptEditorMeta();
-  const { setLlmSettings, setAutoFillSlotsFromFirstMessage, setReadTiming } = useScriptEditorActions();
+  const { setLlmSettings, setAutoFillSlotsFromFirstMessage, setReadTiming, setMessageAggregation } = useScriptEditorActions();
 
   // Локальное состояние для редактирования
   const [localSettings, setLocalSettings] = useState<LlmScriptSettings>({
@@ -72,10 +85,6 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
     defaultMaxTokens: 512,
   });
   const [localAutoFill, setLocalAutoFill] = useState(false);
-  const [localReadTiming, setLocalReadTiming] = useState<{
-    firstMessageDelaySeconds?: number;
-    subsequentMessageDelaySeconds?: number;
-  } | null>(null);
   const [metadata, setMetadata] = useState<LlmMetadataResponse | null>(null);
   const [showAdvancedModels, setShowAdvancedModels] = useState(false);
   const [showAdvancedPrompts, setShowAdvancedPrompts] = useState(false);
@@ -109,15 +118,8 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
         defaultMaxTokens: llmSettings?.defaultMaxTokens ?? 512,
       });
       setLocalAutoFill(autoFillSlots);
-      // Если readTiming null, устанавливаем дефолтные значения 3 секунды
-      setLocalReadTiming(
-        readTiming || {
-          firstMessageDelaySeconds: 3,
-          subsequentMessageDelaySeconds: 3,
-        }
-      );
     }
-  }, [open, llmSettings, autoFillSlots, readTiming]);
+  }, [open, llmSettings, autoFillSlots]);
 
   // Auto-scroll to advanced models when expanded
   useEffect(() => {
@@ -158,39 +160,21 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
     return metadata?.promptTemplates[operationId]?.description || '';
   };
 
-  const handleSave = () => {
-    // Сохраняем настройки - теперь дефолтные модели всегда присутствуют
-    // Проверяем есть ли кастомные промпты, температура, токены или автофилл
-    const hasPrompts = Object.keys(localSettings.defaultPrompts || {}).some(
-      (key) => localSettings.defaultPrompts?.[key as keyof typeof localSettings.defaultPrompts]
-    );
-    const hasCustomTemperature = localSettings.defaultTemperature !== 0.7;
-    const hasCustomMaxTokens = localSettings.defaultMaxTokens !== 512;
-
-    // Всегда сохраняем настройки (включая дефолтные модели), если есть хоть что-то измененное
-    // или если это первый раз сохранения (чтобы установить дефолты)
-    const hasSettings = 
-      Object.keys(localSettings.defaultModels || {}).length > 0 || 
-      hasPrompts || 
-      hasCustomTemperature || 
-      hasCustomMaxTokens || 
-      localAutoFill;
-
-    setLlmSettings(hasSettings ? localSettings : null);
-    setAutoFillSlotsFromFirstMessage(localAutoFill);
-    setReadTiming(localReadTiming);
-    onOpenChange(false);
-  };
-
   const handleResetAll = () => {
+    // Сбрасываем напрямую в store
+    setLlmSettings(null);
+    setAutoFillSlotsFromFirstMessage(false);
+    setReadTiming(null);
+    setMessageAggregation(null);
+
+    // Также сбрасываем локальные состояния (для LLM настроек)
     setLocalSettings({
-      defaultModels: {},
+      defaultModels: DEFAULT_MODELS,
       defaultPrompts: {},
       defaultTemperature: 0.7,
       defaultMaxTokens: 512,
     });
     setLocalAutoFill(false);
-    setLocalReadTiming(null);
   };
 
   const handleClearState = async () => {
@@ -217,24 +201,30 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
 
   // Обновить модель для операции
   const updateModel = (operationId: string, modelId: string | undefined) => {
-    setLocalSettings({
+    const newSettings = {
       ...localSettings,
       defaultModels: {
         ...localSettings.defaultModels,
         [operationId]: modelId,
       },
-    });
+    };
+    setLocalSettings(newSettings);
+    // Автосохранение в store
+    setLlmSettings(newSettings);
   };
 
   // Обновить промпт для операции
   const updatePrompt = (operationId: string, prompt: string | undefined) => {
-    setLocalSettings({
+    const newSettings = {
       ...localSettings,
       defaultPrompts: {
         ...localSettings.defaultPrompts,
         [operationId]: prompt,
       },
-    });
+    };
+    setLocalSettings(newSettings);
+    // Автосохранение в store
+    setLlmSettings(newSettings);
   };
 
   // Сбросить промпт к шаблону
@@ -243,9 +233,62 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
     updatePrompt(operationId, template);
   };
 
+  // Обработчики для автосохранения задержек и агрегации
+  const handleFirstMessageDelayChange = (value: number | undefined) => {
+    const newReadTiming = {
+      ...readTiming,
+      firstMessageDelaySeconds: value,
+    };
+
+    // Сохраняем новое значение в store
+    setReadTiming(newReadTiming);
+
+    // Автокоррекция агрегации, если нужно
+    if (messageAggregation?.enabled && value !== undefined && value > 0) {
+      const currentWindow = messageAggregation.windowSeconds || 5;
+      if (currentWindow >= value) {
+        // Нарушается условие - корректируем
+        const newWindow = Math.max(1, value - 5);
+        setMessageAggregation({
+          ...messageAggregation,
+          windowSeconds: newWindow,
+        });
+      }
+    }
+  };
+
+  const handleSubsequentMessageDelayChange = (value: number | undefined) => {
+    setReadTiming({
+      ...readTiming,
+      subsequentMessageDelaySeconds: value,
+    });
+  };
+
+  const handleWindowSecondsChange = (value: number) => {
+    setMessageAggregation({
+      ...messageAggregation,
+      enabled: messageAggregation?.enabled ?? true,
+      windowSeconds: value,
+    });
+  };
+
+  const handleAggregationEnabledChange = (checked: boolean) => {
+    setMessageAggregation({
+      ...messageAggregation,
+      enabled: checked,
+      windowSeconds: messageAggregation?.windowSeconds ?? 5,
+    });
+  };
+
+  // Динамический максимум для слайдера агрегации
+  const calculateMaxWindowSeconds = (): number => {
+    const firstDelay = readTiming?.firstMessageDelaySeconds ?? 3;
+    return Math.min(240, Math.max(1, firstDelay - 5));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col px-4">
         <DialogHeader>
           <DialogTitle>Настройки LLM</DialogTitle>
           <DialogDescription className="text-xs">
@@ -254,16 +297,16 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="models" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-5 gap-1">
-            <TabsTrigger value="models" className="text-xs px-1.5">Модели</TabsTrigger>
-            <TabsTrigger value="prompts" className="text-xs px-1.5">Промпты</TabsTrigger>
-            <TabsTrigger value="parameters" className="text-xs px-1.5">Параметры</TabsTrigger>
-            <TabsTrigger value="readTiming" className="text-xs px-1.5">Прочтение</TabsTrigger>
-            <TabsTrigger value="clear" className="text-xs px-1.5">Очистка</TabsTrigger>
+        <Tabs defaultValue="models" className="flex-1 flex flex-row overflow-hidden gap-4">
+          <TabsList className="flex flex-col h-fit gap-1 bg-transparent p-0">
+            <TabsTrigger value="models" className="text-xs px-3 py-2 justify-start">Модели</TabsTrigger>
+            <TabsTrigger value="prompts" className="text-xs px-3 py-2 justify-start">Промпты</TabsTrigger>
+            <TabsTrigger value="parameters" className="text-xs px-3 py-2 justify-start">Параметры</TabsTrigger>
+            <TabsTrigger value="readTiming" className="text-xs px-3 py-2 justify-start">Задержки</TabsTrigger>
+            <TabsTrigger value="clear" className="text-xs px-3 py-2 justify-start">Сброс и очистка</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto pr-2 mt-4">
+          <div className="flex-1 overflow-y-auto pr-2">
             {/* Таб: Модели */}
             <TabsContent value="models" className="space-y-6 mt-0">
               <div className="space-y-4">
@@ -749,12 +792,14 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                   </div>
                   <Slider
                     value={[localSettings.defaultTemperature || 0.7]}
-                    onValueChange={(values: number[]) =>
-                      setLocalSettings({
+                    onValueChange={(values: number[]) => {
+                      const newSettings = {
                         ...localSettings,
                         defaultTemperature: values[0],
-                      })
-                    }
+                      };
+                      setLocalSettings(newSettings);
+                      setLlmSettings(newSettings);
+                    }}
                     min={0}
                     max={1}
                     step={0.1}
@@ -771,12 +816,14 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                     id="max-tokens"
                     type="number"
                     value={localSettings.defaultMaxTokens || 512}
-                    onChange={(e) =>
-                      setLocalSettings({
+                    onChange={(e) => {
+                      const newSettings = {
                         ...localSettings,
                         defaultMaxTokens: parseInt(e.target.value) || 512,
-                      })
-                    }
+                      };
+                      setLocalSettings(newSettings);
+                      setLlmSettings(newSettings);
+                    }}
                     min={100}
                     max={4000}
                   />
@@ -813,33 +860,87 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                   <Switch
                     id="auto-fill"
                     checked={localAutoFill}
-                    onCheckedChange={setLocalAutoFill}
+                    onCheckedChange={(checked) => {
+                      setLocalAutoFill(checked);
+                      setAutoFillSlotsFromFirstMessage(checked);
+                    }}
                   />
                 </div>
               </div>
             </TabsContent>
 
-            {/* Таб: Время прочтения */}
-            <TabsContent value="readTiming" className="mt-0">
+            {/* Таб: Задержки */}
+            <TabsContent value="readTiming" className="mt-0 space-y-6">
               <ReadTimingSettings
-                firstMessageDelaySeconds={localReadTiming?.firstMessageDelaySeconds}
-                subsequentMessageDelaySeconds={localReadTiming?.subsequentMessageDelaySeconds}
-                onFirstMessageChange={(value) =>
-                  setLocalReadTiming({
-                    ...localReadTiming,
-                    firstMessageDelaySeconds: value,
-                  })
-                }
-                onSubsequentMessageChange={(value) =>
-                  setLocalReadTiming({
-                    ...localReadTiming,
-                    subsequentMessageDelaySeconds: value,
-                  })
-                }
+                firstMessageDelaySeconds={readTiming?.firstMessageDelaySeconds}
+                subsequentMessageDelaySeconds={readTiming?.subsequentMessageDelaySeconds}
+                onFirstMessageChange={handleFirstMessageDelayChange}
+                onSubsequentMessageChange={handleSubsequentMessageDelayChange}
               />
+
+              {/* Агрегация сообщений */}
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="message-aggregation-enabled">
+                        Агрегация сообщений
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Работает только для новых чатов (когда скрипт ещё не запущен).
+                            Система собирает все сообщения пользователя в течение указанного
+                            окна перед отправкой ответа.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Сбор нескольких сообщений перед ответом
+                    </p>
+                  </div>
+                  <Switch
+                    id="message-aggregation-enabled"
+                    checked={messageAggregation?.enabled ?? true}
+                    onCheckedChange={handleAggregationEnabledChange}
+                  />
+                </div>
+
+                {messageAggregation?.enabled !== false && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm">
+                        Окно агрегации: {formatDelay(messageAggregation?.windowSeconds ?? 5)}
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Время сбора сообщений перед отправкой ответа.
+                            Не может превышать задержку прочтения первого сообщения.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Slider
+                      value={[messageAggregation?.windowSeconds ?? 5]}
+                      onValueChange={(values) => handleWindowSecondsChange(values[0])}
+                      min={1}
+                      max={calculateMaxWindowSeconds()}
+                      step={1}
+                    />
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
-            {/* Таб: Очистка */}
+            {/* Таб: Сброс и очистка */}
             <TabsContent value="clear" className="space-y-6 mt-0">
               <div className="space-y-4">
                 {clearSuccess ? (
@@ -851,6 +952,26 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                   </Alert>
                 ) : (
                   <>
+                    {/* Секция: Сброс настроек LLM */}
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-xs">Сброс настроек LLM</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Сбросить все настройки модального окна (модели, промпты, параметры, задержки)
+                        к значениям по умолчанию.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={handleResetAll}
+                        className="mt-2"
+                      >
+                        Сбросить все настройки
+                      </Button>
+                    </div>
+
+                    {/* Разделитель */}
+                    <div className="border-t pt-4"></div>
+
+                    {/* Секция: Очистка состояния скрипта */}
                     <Alert variant="destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
@@ -889,20 +1010,6 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
             </TabsContent>
           </div>
         </Tabs>
-
-        <DialogFooter className="flex-row justify-between">
-          <Button type="button" variant="outline" onClick={handleResetAll}>
-            Сбросить все
-          </Button>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Отмена
-            </Button>
-            <Button type="button" onClick={handleSave}>
-              Сохранить
-            </Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
 
       {/* Clear state confirmation dialog */}

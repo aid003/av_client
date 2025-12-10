@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/components/ui/select";
+import { NotificationBell } from "@/widgets/notification-center";
 
 type NavItem = {
   title: string;
@@ -177,7 +178,10 @@ function ProfileFooter() {
           <SidebarSeparator className="mx-0" />
           <div className="p-1">
             <MenuRow label="Биллинг" />
-            <MenuRow label="Уведомления" />
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <NotificationBell />
+              <span className="text-sm">Уведомления</span>
+            </div>
             <SidebarSeparator className="my-1" />
             <div className="px-2 py-2">
               <label className="text-sidebar-foreground text-xs font-medium mb-1.5 block">

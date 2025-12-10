@@ -113,7 +113,7 @@ export function ChatView({
   }, [chat.participants, chat.avitoAccountId, messages]);
 
   return (
-    <div className="flex flex-col h-full bg-background min-h-0">
+    <div className="flex flex-col h-full bg-background min-h-0 overflow-x-hidden">
       {/* Заголовок чата */}
       <ChatHeader
         chat={chat}

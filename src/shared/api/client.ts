@@ -6,7 +6,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly statusText: string,
     message: string,
-    public readonly code?: string
+    public readonly code?: string,
+    public readonly data?: unknown
   ) {
     super(message);
     this.name = 'ApiError';
@@ -160,8 +161,10 @@ export class ApiClient {
       }
 
       // Попытка получить детальное сообщение от сервера
+      let errorData: unknown;
       try {
         const errorJson = await response.json();
+        errorData = errorJson;
         errorMessage = errorJson?.message || errorJson?.error || errorMessage;
         errorCode = errorJson?.code;
 
@@ -190,7 +193,8 @@ export class ApiClient {
         response.status,
         response.statusText,
         errorMessage,
-        errorCode
+        errorCode,
+        errorData
       );
     }
 

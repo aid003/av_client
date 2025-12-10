@@ -141,13 +141,13 @@ export function ChatListItem({ chat, onClick }: ChatListItemProps) {
               <span className="truncate flex-1">{messagePreview.text}</span>
             </div>
 
-            <div className="flex items-center gap-1 text-[10px]">
-              <Badge variant={isU2I ? 'default' : 'secondary'} className="text-[9px] h-3 px-1 leading-none">
+            <div className="flex items-center gap-1 text-[10px] min-w-0">
+              <Badge variant={isU2I ? 'default' : 'secondary'} className="text-[9px] h-3 px-1 leading-none shrink-0">
                 {isU2I ? 'U2I' : 'U2U'}
               </Badge>
               {isU2I && itemInfo && (
                 <>
-                  <span className="text-muted-foreground truncate">{itemInfo.title}</span>
+                  <span className="text-muted-foreground truncate min-w-0">{itemInfo.title}</span>
                   {itemInfo.price_string && (
                     <span className="font-semibold text-primary shrink-0">{itemInfo.price_string}</span>
                   )}

@@ -2,13 +2,25 @@
 
 import { memo } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
+import { Badge } from '@/shared/ui/components/ui/badge';
 import { BaseNode } from './BaseNode';
 import type { ScriptNode } from '../../model/types';
 import { useScriptEditorValidation } from '../../model/store';
 import type { MessageBlockConfig } from '@/entities/sales-script';
 
 type MessageNodeProps = NodeProps<ScriptNode>;
+
+function formatDelay(seconds: number | undefined): string {
+  if (seconds === undefined || seconds === 0) return '';
+  if (seconds < 60) return `${seconds}с`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (remainingSeconds === 0) return `${minutes}м`;
+  return `${minutes}м ${remainingSeconds}с`;
+}
 
 export const MessageNode = memo(function MessageNode({
   data,
@@ -36,6 +48,12 @@ export const MessageNode = memo(function MessageNode({
           <div className="text-xs text-muted-foreground line-clamp-2">
             {config.text}
           </div>
+        )}
+        {config.delaySeconds !== undefined && config.delaySeconds > 0 && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            <Clock />
+            {formatDelay(config.delaySeconds)}
+          </Badge>
         )}
       </div>
     </BaseNode>

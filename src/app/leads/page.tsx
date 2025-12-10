@@ -77,8 +77,8 @@ export default function LeadsPage() {
       <>
         <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
           {!selectedLead && (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <h1 className="text-3xl font-bold">Лиды</h1>
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+              <h1 className="text-2xl sm:text-3xl font-bold">Лиды</h1>
               <LeadFilters tenantId={tenantId!} />
               <LeadsList
                 tenantId={tenantId!}
@@ -94,7 +94,7 @@ export default function LeadsPage() {
         >
           <SheetContent
             side="right"
-            className="w-full sm:w-full p-0 flex flex-col gap-0 h-full"
+            className="w-full p-0 flex flex-col gap-0 h-full overflow-x-hidden"
           >
             <SheetTitle className="sr-only">Лид</SheetTitle>
             {selectedLead && (
@@ -116,12 +116,12 @@ export default function LeadsPage() {
   return (
     <div className="h-[calc(100vh-3rem)] flex overflow-hidden">
       {/* Left panel with filters and list */}
-      <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
-        <div className="p-4 border-b space-y-4 shrink-0">
-          <h1 className="text-2xl font-bold">Лиды</h1>
+      <div className="w-full md:w-2/5 lg:w-1/3 xl:w-1/4 border-r flex flex-col overflow-hidden">
+        <div className="p-3 md:p-4 border-b space-y-3 md:space-y-4 shrink-0">
+          <h1 className="text-xl md:text-2xl font-bold">Лиды</h1>
           <LeadFilters tenantId={tenantId!} />
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4">
           <LeadsList
             tenantId={tenantId!}
             onLeadSelect={handleLeadSelect}
@@ -135,12 +135,12 @@ export default function LeadsPage() {
         {selectedLead ? (
           <LeadDetailView lead={selectedLead} />
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold text-muted-foreground">
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+            <div className="text-center space-y-3 md:space-y-4 px-4">
+              <h2 className="text-xl md:text-2xl font-semibold text-muted-foreground">
                 Выберите лид
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-sm md:text-base text-muted-foreground">
                 Выберите лид из списка слева, чтобы просмотреть детали
               </p>
             </div>

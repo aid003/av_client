@@ -187,6 +187,16 @@ export interface ScriptMeta {
     /** Задержка для последующих сообщений (секунды) */
     subsequentMessageDelaySeconds?: number;
   };
+
+  /**
+   * Настройки агрегации первых сообщений нового чата
+   */
+  messageAggregation?: {
+    /** Включена ли агрегация первых сообщений */
+    enabled?: boolean;
+    /** Окно сбора сообщений в секундах (1-30) */
+    windowSeconds?: number;
+  };
 }
 
 // --- Полная структура definition ---
@@ -240,6 +250,19 @@ export interface ScriptValidationResult {
   isValid: boolean;
   errors: ValidationIssue[];
   warnings: ValidationIssue[];
+}
+
+export interface ValidationError {
+  code: string;
+  message: string;
+  blockId: string | null;
+}
+
+export interface ValidationErrorResponse {
+  statusCode: number;
+  message: string;
+  error: string;
+  errors: ValidationError[];
 }
 
 // ============================================

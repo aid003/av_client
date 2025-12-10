@@ -52,7 +52,7 @@ export const BaseNode = memo(function BaseNode({
         'relative bg-background rounded-lg shadow-md border-2 min-w-[180px] max-w-[240px] transition-all',
         selected && 'ring-2 ring-primary ring-offset-2',
         validationStatus === 'error'
-          ? 'border-destructive shadow-[0_0_0_2px_rgba(239,68,68,0.12)]'
+          ? 'border-destructive shadow-[0_0_0_2px_rgba(239,68,68,0.12)] animate-pulse'
           : validationStatus === 'warning'
             ? 'border-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.16)]'
             : borderColor

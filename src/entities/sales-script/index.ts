@@ -26,6 +26,8 @@ export type {
   ValidationIssueContext,
   ValidationIssue,
   ScriptValidationResult,
+  ValidationError,
+  ValidationErrorResponse,
   // Sales Script Entity
   SalesScript,
   CreateSalesScriptDto,

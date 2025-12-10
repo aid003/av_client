@@ -33,7 +33,7 @@ function MessageImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   }
 
   return (
-    <div className="relative w-full max-w-sm rounded-lg overflow-hidden bg-muted">
+    <div className="relative w-full max-w-full rounded-lg overflow-hidden bg-muted">
       <Image
         src={imageUrl}
         alt={alt}
@@ -50,7 +50,7 @@ function MessageImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
 function renderMessageContent(message: Message) {
   switch (message.type) {
     case 'text':
-      return <p className="text-sm whitespace-pre-wrap wrap-break-word">{message.text}</p>;
+      return <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>;
 
     case 'image':
       if (message.image?.sizes) {
@@ -97,14 +97,14 @@ function renderMessageContent(message: Message) {
             <span>Геолокация</span>
           </div>
           {message.location?.title && (
-            <p className="text-xs">{message.location.title}</p>
+            <p className="text-xs break-words">{message.location.title}</p>
           )}
           {message.location?.lat && message.location?.lon && (
             <a
               href={`https://yandex.ru/maps/?pt=${message.location.lon},${message.location.lat}&z=15`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary hover:underline break-all"
             >
               Открыть на карте
             </a>
@@ -122,10 +122,10 @@ function renderMessageContent(message: Message) {
             className="flex items-center gap-2 text-sm text-primary hover:underline"
           >
             <LinkIcon className="h-4 w-4 shrink-0" />
-            <span>{message.link?.preview?.title || message.link?.text || message.link?.url}</span>
+            <span className="break-all">{message.link?.preview?.title || message.link?.text || message.link?.url}</span>
           </a>
           {message.link?.preview?.description && (
-            <p className="text-xs opacity-80">{message.link.preview.description}</p>
+            <p className="text-xs opacity-80 break-words">{message.link.preview.description}</p>
           )}
         </div>
       );
@@ -138,7 +138,7 @@ function renderMessageContent(message: Message) {
               href={message.item.item_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm hover:underline"
+              className="text-sm hover:underline break-words"
             >
               {message.item.title}
             </a>
@@ -225,7 +225,7 @@ export function MessageBubble({ message, currentAuthorId }: MessageBubbleWithCon
               <Quote className="h-3 w-3" />
             </div>
             {message.quote.content?.text && (
-              <p className="line-clamp-2">{message.quote.content.text}</p>
+              <p className="line-clamp-2 break-words">{message.quote.content.text}</p>
             )}
           </div>
         )}

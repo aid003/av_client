@@ -49,20 +49,21 @@ export function LeadFilters({ tenantId }: LeadFiltersProps) {
   const hasActiveFilters = Object.values(filters).some((v) => v !== undefined);
 
   return (
-    <div className="bg-card border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Фильтры</h3>
+    <div className="bg-card border rounded-lg p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+        <h3 className="font-semibold text-sm sm:text-base">Фильтры</h3>
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="shrink-0">
             <X className="h-4 w-4 mr-1" />
-            Сбросить
+            <span className="hidden sm:inline">Сбросить</span>
+            <span className="sm:hidden">Сброс</span>
           </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label>Завершенность</Label>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <div className="space-y-1.5 sm:space-y-2">
+          <Label className="text-xs sm:text-sm">Завершенность</Label>
           <Select
             value={
               filters.finished === undefined
@@ -78,7 +79,7 @@ export function LeadFilters({ tenantId }: LeadFiltersProps) {
               )
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Все" />
             </SelectTrigger>
             <SelectContent>
@@ -89,15 +90,15 @@ export function LeadFilters({ tenantId }: LeadFiltersProps) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Скрипт</Label>
+        <div className="space-y-1.5 sm:space-y-2">
+          <Label className="text-xs sm:text-sm">Скрипт</Label>
           <Select
             value={filters.scriptId || 'all'}
             onValueChange={(v) =>
               handleFilterChange('scriptId', v === 'all' ? undefined : v)
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Все" />
             </SelectTrigger>
             <SelectContent>

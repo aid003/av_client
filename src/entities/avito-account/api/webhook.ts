@@ -37,7 +37,7 @@ export async function getWebhookStatus(
  * Зарегистрировать webhook для получения сообщений
  */
 export async function registerWebhook(accountId: string): Promise<void> {
-  const webhookUrl = `${config.apiBaseUrl}/api/avito-webhook/${accountId}`;
+  const webhookUrl = `${config.apiBaseUrl}/api/avito-messenger/webhook/${accountId}`;
 
   return apiClient.post<void, { url: string }>(
     `/api/avito-messenger/register/${accountId}`,

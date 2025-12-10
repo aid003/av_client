@@ -66,7 +66,7 @@ export default function ChatsPage() {
   if (isMobile) {
     return (
       <>
-        <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+        <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden overflow-x-hidden">
           {!selectedChat && (
             <div className="flex-1 overflow-y-auto p-4">
               <AvitoChatsList
@@ -78,7 +78,7 @@ export default function ChatsPage() {
           )}
         </div>
         <Sheet open={!!selectedChat} onOpenChange={(open) => !open && handleCloseChat()}>
-          <SheetContent side="right" className="w-full sm:w-full p-0 flex flex-col gap-0 h-full">
+          <SheetContent side="right" className="w-full sm:w-full p-0 flex flex-col gap-0 h-full overflow-x-hidden">
             <SheetTitle className="sr-only">Чат</SheetTitle>
             {selectedChat && (
               <div className="flex-1 flex flex-col min-h-0">
@@ -97,7 +97,7 @@ export default function ChatsPage() {
 
   // Десктопная версия: двухпанельный layout
   return (
-    <div className="h-[calc(100vh-3rem)] flex overflow-hidden">
+    <div className="h-[calc(100vh-3rem)] flex overflow-hidden overflow-x-hidden">
       {/* Левая панель со списком чатов */}
       <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4">
@@ -110,7 +110,7 @@ export default function ChatsPage() {
       </div>
 
       {/* Правая панель с просмотром чата */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden overflow-x-hidden">
         {selectedChat ? (
           <ChatView chat={selectedChat} />
         ) : (
