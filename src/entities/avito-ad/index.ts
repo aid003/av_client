@@ -13,7 +13,10 @@ export type {
 export { getAvitoAds, syncAvitoAds } from './api';
 
 // Hooks
-export { useInfiniteAds } from './lib';
+export { useInfiniteAds, useTableAds } from './lib';
+export type { AdsFilters } from './lib';
 
 // UI
 export { AvitoAdCard } from './ui/AvitoAdCard';
+export { AvitoAdsTable } from './ui/table/AvitoAdsTable';
+export { createColumns } from './ui/table/columns';

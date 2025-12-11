@@ -1,7 +1,7 @@
 'use client';
 
 import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
-import { AvitoAdsList } from '@/widgets/avito-ads-list';
+import { AvitoAdsTable } from '@/widgets/avito-ads-table';
 
 export default function AdsPage() {
   const { authData, isLoading, isAuthenticated } = useTelegramAuth();
@@ -29,7 +29,7 @@ export default function AdsPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <AvitoAdsList tenantId={authData.tenant.id} />
+      <AvitoAdsTable tenantId={authData.tenant.id} />
     </div>
   );
 }
