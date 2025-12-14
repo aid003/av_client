@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -24,6 +23,7 @@ import {
   Settings,
   Upload,
   FileText,
+  Search,
 } from 'lucide-react';
 import type { KnowledgeBase } from '../model/types';
 
@@ -34,6 +34,7 @@ interface KnowledgeBaseCardProps {
   onUploadMaterials?: (kb: KnowledgeBase) => void;
   onViewChunks?: (kb: KnowledgeBase) => void;
   onAttachAds?: (kb: KnowledgeBase) => void;
+  onTestSearch?: (kb: KnowledgeBase) => void;
 }
 
 export function KnowledgeBaseCard({
@@ -43,6 +44,7 @@ export function KnowledgeBaseCard({
   onUploadMaterials,
   onViewChunks,
   onAttachAds,
+  onTestSearch,
 }: KnowledgeBaseCardProps) {
   const formatDate = (dateString: string) => {
     try {
@@ -97,6 +99,12 @@ export function KnowledgeBaseCard({
                 <DropdownMenuItem onClick={() => onAttachAds(knowledgeBase)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Привязать объявления
+                </DropdownMenuItem>
+              )}
+              {onTestSearch && (
+                <DropdownMenuItem onClick={() => onTestSearch(knowledgeBase)}>
+                  <Search className="h-4 w-4 mr-2" />
+                  Проверить поиск
                 </DropdownMenuItem>
               )}
               {onEdit && (

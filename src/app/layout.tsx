@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/shared/ui/globals.css";
+import "video.js/dist/video-js.css";
 import { Providers } from "@/shared/providers/Providers";
 import { ToastContainer } from "@/widgets/notification-center";
 

@@ -1,12 +1,12 @@
 'use client';
 
-import { useNotificationPolling } from '@/features/notification-polling';
+import { useNotificationSync } from '@/features/notification-sync';
 
 export function NotificationPollingProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useNotificationPolling();
+  useNotificationSync();
   return <>{children}</>;
 }

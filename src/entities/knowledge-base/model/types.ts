@@ -84,3 +84,30 @@ export interface ChunkListResponseDto {
   };
   data: Chunk[];
 }
+
+// Search types
+export type FusionType = 'Ranked' | 'RelativeScore';
+
+export interface SearchQueryDto {
+  query: string;
+  knowledgeBaseIds?: string[];
+  avitoAdId?: string;
+  limit?: number;
+  alpha?: number;
+  fusionType?: FusionType;
+}
+
+export interface ChunkSearchResultDto {
+  text: string;
+  knowledgeBaseId: string;
+  knowledgeBaseName: string;
+  avitoAdId?: string;
+  chunkIndex: number;
+  score: number;
+  metadata?: Record<string, any>;
+}
+
+export interface SearchResultDto {
+  chunks: ChunkSearchResultDto[];
+  total: number;
+}

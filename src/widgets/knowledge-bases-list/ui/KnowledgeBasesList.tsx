@@ -15,6 +15,7 @@ import { DeleteKnowledgeBaseDialog } from '@/features/delete-knowledge-base';
 import { UploadMaterialsDialog } from '@/features/upload-knowledge-materials';
 import { ViewChunksDialog } from '@/features/view-chunks';
 import { AttachAdsToKnowledgeBaseDialog } from '@/features/link-ads-to-knowledge-base/ui/AttachAdsToKnowledgeBaseDialog';
+import { TestSearchDialog } from '@/features/test-knowledge-base-search';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardHeader } from '@/shared/ui/components/ui/card';
 import { EmptyState, EmptyStateIcons } from '@/shared/ui';
@@ -32,6 +33,7 @@ const MemoizedKnowledgeBaseCard = memo<{
   onUploadMaterials: (kb: KnowledgeBase) => void;
   onViewChunks: (kb: KnowledgeBase) => void;
   onAttachAds: (kb: KnowledgeBase) => void;
+  onTestSearch: (kb: KnowledgeBase) => void;
 }>(KnowledgeBaseCard);
 
 export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
@@ -50,6 +52,8 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const [isViewChunksDialogOpen, setIsViewChunksDialogOpen] = useState(false);
   const [attachingKb, setAttachingKb] = useState<KnowledgeBase | null>(null);
   const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
+  const [testSearchKb, setTestSearchKb] = useState<KnowledgeBase | null>(null);
+  const [isTestSearchDialogOpen, setIsTestSearchDialogOpen] = useState(false);
 
   useEffect(() => {
     loadKnowledgeBases(tenantId);
@@ -78,6 +82,11 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
   const handleAttachAds = (kb: KnowledgeBase) => {
     setAttachingKb(kb);
     setIsAttachDialogOpen(true);
+  };
+
+  const handleTestSearch = (kb: KnowledgeBase) => {
+    setTestSearchKb(kb);
+    setIsTestSearchDialogOpen(true);
   };
 
   // Состояние загрузки
@@ -135,6 +144,7 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
             onUploadMaterials={handleUploadMaterials}
             onViewChunks={handleViewChunks}
             onAttachAds={handleAttachAds}
+            onTestSearch={handleTestSearch}
           />
         ))}
       </div>
@@ -178,6 +188,13 @@ export function KnowledgeBasesList({ tenantId }: KnowledgeBasesListProps) {
         tenantId={tenantId}
         open={isAttachDialogOpen}
         onOpenChange={setIsAttachDialogOpen}
+      />
+
+      <TestSearchDialog
+        knowledgeBase={testSearchKb}
+        tenantId={tenantId}
+        open={isTestSearchDialogOpen}
+        onOpenChange={setIsTestSearchDialogOpen}
       />
     </>
   );

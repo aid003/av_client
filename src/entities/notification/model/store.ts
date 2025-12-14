@@ -16,6 +16,7 @@ interface NotificationState {
   loadingByTenant: Record<string, boolean>;
   errorsByTenant: Record<string, string | null>;
   lastFetchedAtByTenant: Record<string, number | null>;
+  lastNotificationAddedAtByTenant: Record<string, number | null>;
 
   // Actions
   fetchNotifications: (
@@ -39,6 +40,11 @@ interface NotificationState {
   clearNotifications: (tenantId: string) => void;
 }
 
+// Helper: единая логика подсчёта непрочитанных
+function calculateUnreadCount(notifications: Notification[]): number {
+  return notifications.filter((n) => !n.isRead && !n.isDismissed).length;
+}
+
 export const useNotificationStore = create<NotificationState>()(
   persist(
     (set, get) => ({
@@ -48,6 +54,7 @@ export const useNotificationStore = create<NotificationState>()(
       loadingByTenant: {},
       errorsByTenant: {},
       lastFetchedAtByTenant: {},
+      lastNotificationAddedAtByTenant: {},
 
       // === Fetch Notifications ===
       fetchNotifications: async (
@@ -73,24 +80,24 @@ export const useNotificationStore = create<NotificationState>()(
           });
 
           // Update notifications: replace with fresh data from server
-          // Keep existing notifications that are not in the response (they might be dismissed locally)
-          const existingNotifications = state.notificationsByTenant[tenantId] || [];
-          const responseIds = new Set(response.data.map((n) => n.id));
-          const existingNotInResponse = existingNotifications.filter(
-            (n) => !responseIds.has(n.id)
+          // Server returns only active notifications, so we trust it completely
+          const sortedNotifications = response.data.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
+
+          // Calculate unread count locally to ensure accuracy
+          // This prevents stale counts from server cache
+          const actualUnreadCount = calculateUnreadCount(sortedNotifications);
 
           set((state) => ({
             notificationsByTenant: {
               ...state.notificationsByTenant,
-              [tenantId]: [...response.data, ...existingNotInResponse].sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-              ),
+              [tenantId]: sortedNotifications,
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: response.meta.unreadCount,
+              [tenantId]: actualUnreadCount,
             },
             lastFetchedAtByTenant: {
               ...state.lastFetchedAtByTenant,
@@ -137,9 +144,6 @@ export const useNotificationStore = create<NotificationState>()(
             n.id === id ? updated : n
           );
 
-          // Recalculate unread count
-          const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
-
           set((state) => ({
             notificationsByTenant: {
               ...state.notificationsByTenant,
@@ -147,7 +151,7 @@ export const useNotificationStore = create<NotificationState>()(
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: unreadCount,
+              [tenantId]: calculateUnreadCount(updatedNotifications),
             },
           }));
         } catch (err) {
@@ -196,9 +200,6 @@ export const useNotificationStore = create<NotificationState>()(
           const notifications = state.notificationsByTenant[tenantId] || [];
           const updatedNotifications = notifications.filter((n) => n.id !== id);
 
-          // Recalculate unread count
-          const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
-
           set((state) => ({
             notificationsByTenant: {
               ...state.notificationsByTenant,
@@ -206,7 +207,7 @@ export const useNotificationStore = create<NotificationState>()(
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: unreadCount,
+              [tenantId]: calculateUnreadCount(updatedNotifications),
             },
           }));
         } catch (err) {
@@ -225,9 +226,6 @@ export const useNotificationStore = create<NotificationState>()(
           const notifications = state.notificationsByTenant[tenantId] || [];
           const updatedNotifications = notifications.filter((n) => n.id !== id);
 
-          // Recalculate unread count
-          const unreadCount = updatedNotifications.filter((n) => !n.isRead).length;
-
           set((state) => ({
             notificationsByTenant: {
               ...state.notificationsByTenant,
@@ -235,7 +233,7 @@ export const useNotificationStore = create<NotificationState>()(
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: unreadCount,
+              [tenantId]: calculateUnreadCount(updatedNotifications),
             },
           }));
         } catch (err) {
@@ -251,6 +249,18 @@ export const useNotificationStore = create<NotificationState>()(
         const state = get();
         const notifications = state.notificationsByTenant[tenantId] || [];
         const existingIndex = notifications.findIndex((n) => n.id === notification.id);
+        const timestamp = Date.now();
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[NotificationStore] addNotification called:', {
+            tenantId,
+            notificationId: notification.id,
+            title: notification.title,
+            existingIndex,
+            timestamp,
+            previousTimestamp: state.lastNotificationAddedAtByTenant[tenantId],
+          });
+        }
 
         if (existingIndex >= 0) {
           // Update existing
@@ -263,7 +273,11 @@ export const useNotificationStore = create<NotificationState>()(
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: updated.filter((n) => !n.isRead).length,
+              [tenantId]: calculateUnreadCount(updated),
+            },
+            lastNotificationAddedAtByTenant: {
+              ...state.lastNotificationAddedAtByTenant,
+              [tenantId]: timestamp,
             },
           }));
         } else {
@@ -276,9 +290,17 @@ export const useNotificationStore = create<NotificationState>()(
             },
             unreadCountByTenant: {
               ...state.unreadCountByTenant,
-              [tenantId]: updated.filter((n) => !n.isRead).length,
+              [tenantId]: calculateUnreadCount(updated),
+            },
+            lastNotificationAddedAtByTenant: {
+              ...state.lastNotificationAddedAtByTenant,
+              [tenantId]: timestamp,
             },
           }));
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[NotificationStore] addNotification completed, new timestamp:', timestamp);
         }
       },
 
@@ -297,7 +319,7 @@ export const useNotificationStore = create<NotificationState>()(
           },
           unreadCountByTenant: {
             ...state.unreadCountByTenant,
-            [tenantId]: updated.filter((n) => !n.isRead).length,
+            [tenantId]: calculateUnreadCount(updated),
           },
         }));
       },
@@ -350,11 +372,44 @@ export const useNotificationStore = create<NotificationState>()(
     }),
     {
       name: 'notifications-store',
+      version: 1,
       partialize: (state) => ({
         notificationsByTenant: state.notificationsByTenant,
         unreadCountByTenant: state.unreadCountByTenant,
         lastFetchedAtByTenant: state.lastFetchedAtByTenant,
+        lastNotificationAddedAtByTenant: state.lastNotificationAddedAtByTenant,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+
+        const now = Date.now();
+        const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+        // Clean stale timestamps (older than 24h)
+        const cleanedLastFetched: Record<string, number | null> = {};
+        const cleanedLastAdded: Record<string, number | null> = {};
+
+        for (const tenantId in state.lastFetchedAtByTenant) {
+          const timestamp = state.lastFetchedAtByTenant[tenantId];
+          if (timestamp && (now - timestamp < MAX_AGE)) {
+            cleanedLastFetched[tenantId] = timestamp;
+          }
+        }
+
+        for (const tenantId in state.lastNotificationAddedAtByTenant) {
+          const timestamp = state.lastNotificationAddedAtByTenant[tenantId];
+          if (timestamp && (now - timestamp < MAX_AGE)) {
+            cleanedLastAdded[tenantId] = timestamp;
+          }
+        }
+
+        state.lastFetchedAtByTenant = cleanedLastFetched;
+        state.lastNotificationAddedAtByTenant = cleanedLastAdded;
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[NotificationStore] Cleaned stale timestamps');
+        }
+      },
     }
   )
 );

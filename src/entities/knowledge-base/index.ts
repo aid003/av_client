@@ -12,6 +12,10 @@ export type {
   DeleteChunksBatchDto,
   DeleteChunksBatchResponseDto,
   ChunkListResponseDto,
+  SearchQueryDto,
+  ChunkSearchResultDto,
+  SearchResultDto,
+  FusionType,
 } from './model/types';
 
 // API

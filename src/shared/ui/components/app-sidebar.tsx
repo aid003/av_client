@@ -37,7 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/components/ui/select";
-import { NotificationBell } from "@/widgets/notification-center";
+import { useNotificationStore, NotificationBadge } from "@/entities/notification";
+import { Bell } from "lucide-react";
 
 type NavItem = {
   title: string;
@@ -106,6 +107,10 @@ function ProfileFooter() {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const { mode, setMode } = useThemeStore();
 
+  const tenantId = authData?.tenant.id;
+  const { getUnreadCount } = useNotificationStore();
+  const unreadCount = tenantId ? getUnreadCount(tenantId) : 0;
+
   const firstName = authData?.user.firstName ?? "";
   const lastName = authData?.user.lastName ?? "";
   const username = authData?.user.username;
@@ -141,7 +146,7 @@ function ProfileFooter() {
     <div className="relative" ref={containerRef}>
       {/* При свёрнутом сайдбаре показываем только аватар без кнопки */}
       <div className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
-        <Avatar photoUrl={photoUrl} name={fullName} />
+        <Avatar photoUrl={photoUrl} name={fullName} showBadge={true} badgeCount={unreadCount} />
       </div>
 
       {/* При развёрнутом сайдбаре показываем полную кнопку с текстом */}
@@ -150,7 +155,7 @@ function ProfileFooter() {
         onClick={() => setOpen((v) => !v)}
         className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground flex w-full items-center gap-2 rounded-md p-2 group-data-[collapsible=icon]:hidden"
       >
-        <Avatar photoUrl={photoUrl} name={fullName} />
+        <Avatar photoUrl={photoUrl} name={fullName} showBadge={true} badgeCount={unreadCount} />
         <div className="min-w-0 flex-1 text-left leading-tight">
           <div className="truncate text-sm font-medium">{fullName}</div>
           {username ? (
@@ -167,7 +172,7 @@ function ProfileFooter() {
       {open ? (
         <div className="bg-sidebar text-sidebar-foreground border-sidebar-border absolute bottom-12 left-2 right-2 z-50 rounded-md border shadow-sm">
           <div className="flex items-center gap-3 p-3">
-            <Avatar size={36} photoUrl={photoUrl} name={fullName} />
+            <Avatar size={36} photoUrl={photoUrl} name={fullName} showBadge={true} badgeCount={unreadCount} />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{fullName}</div>
               {username ? (
@@ -177,11 +182,19 @@ function ProfileFooter() {
           </div>
           <SidebarSeparator className="mx-0" />
           <div className="p-1">
-            <MenuRow label="Биллинг" />
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <NotificationBell />
-              <span className="text-sm">Уведомления</span>
-            </div>
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="flex-1">Уведомления</span>
+              {unreadCount > 0 && (
+                <span className="bg-destructive text-destructive-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
             <SidebarSeparator className="my-1" />
             <div className="px-2 py-2">
               <label className="text-sidebar-foreground text-xs font-medium mb-1.5 block">
@@ -212,10 +225,14 @@ function Avatar({
   photoUrl,
   name,
   size = 28,
+  showBadge = false,
+  badgeCount = 0,
 }: {
   photoUrl?: string;
   name: string;
   size?: number;
+  showBadge?: boolean;
+  badgeCount?: number;
 }) {
   const initials = React.useMemo(() => {
     const parts = name.trim().split(/\s+/);
@@ -224,20 +241,16 @@ function Avatar({
     return a + b || "U";
   }, [name]);
 
-  if (photoUrl) {
-    return (
-      <Image
-        src={photoUrl}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-md object-cover"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-
-  return (
+  const avatarElement = photoUrl ? (
+    <Image
+      src={photoUrl}
+      alt={name}
+      width={size}
+      height={size}
+      className="rounded-md object-cover"
+      referrerPolicy="no-referrer"
+    />
+  ) : (
     <div
       aria-hidden
       style={{ width: size, height: size }}
@@ -246,6 +259,17 @@ function Avatar({
       {initials}
     </div>
   );
+
+  if (showBadge && badgeCount > 0) {
+    return (
+      <div className="relative">
+        {avatarElement}
+        <NotificationBadge count={badgeCount} />
+      </div>
+    );
+  }
+
+  return avatarElement;
 }
 
 function MenuRow({ label }: { label: string }) {

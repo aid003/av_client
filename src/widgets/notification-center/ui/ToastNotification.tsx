@@ -100,8 +100,8 @@ export function ToastNotification({
         'relative min-w-[320px] max-w-[420px] rounded-lg border shadow-lg transition-all duration-300',
         getNotificationColorClass(notification.type),
         isExiting
-          ? 'opacity-0 translate-x-full'
-          : 'opacity-100 translate-x-0'
+          ? 'opacity-0 translate-y-full scale-95'
+          : 'opacity-100 translate-y-0 scale-100'
       )}
     >
       <div className="flex gap-3 p-4">
