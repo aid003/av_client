@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 import { useSidebar } from '@/shared/ui/components/ui/sidebar';
 import { ScriptEditor } from '@/widgets/script-editor';
-import type { SalesScript } from '@/entities/sales-script';
 
 interface NewScriptData {
   name: string;

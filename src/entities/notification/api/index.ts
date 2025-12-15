@@ -4,5 +4,6 @@ export {
   createNotification,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  dismissNotification,
   deleteNotification,
 } from './notifications';

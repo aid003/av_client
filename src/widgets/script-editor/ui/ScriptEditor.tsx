@@ -16,6 +16,7 @@ import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import type { SalesScript } from '@/entities/sales-script';
+import { MobileWarningOverlay } from './MobileWarningOverlay';
 
 interface NewScriptData {
   name: string;
@@ -91,7 +92,7 @@ export function ScriptEditor({
 
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
+      <div className="flex flex-col h-[calc(100vh-3rem)] bg-background relative">
         <EditorHeader tenantId={tenantId} />
 
         <div className="flex flex-1">
@@ -114,6 +115,9 @@ export function ScriptEditor({
             <GlobalValidationErrors />
           </div>
         </div>
+
+        {/* Mobile Warning Overlay */}
+        <MobileWarningOverlay />
       </div>
     </ReactFlowProvider>
   );

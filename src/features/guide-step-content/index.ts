@@ -1,0 +1,10 @@
+export { Step01AvitoAccount } from './ui/Step01AvitoAccount';
+export { Step02KnowledgeBase } from './ui/Step02KnowledgeBase';
+export { Step03SalesScript } from './ui/Step03SalesScript';
+export { Step04ScriptSettings } from './ui/Step04ScriptSettings';
+export { Step05LinkingAds } from './ui/Step05LinkingAds';
+export { Step06ChatsOverview } from './ui/Step06ChatsOverview';
+export { Step07LeadsTracking } from './ui/Step07LeadsTracking';
+export { Step08Notifications } from './ui/Step08Notifications';
+export { Step09AdvancedFeatures } from './ui/Step09AdvancedFeatures';
+export { Step10Success } from './ui/Step10Success';

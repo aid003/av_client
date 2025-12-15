@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { miniApp } from '@tma.js/sdk-react';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Alert, AlertDescription } from '@/shared/ui/components/ui/alert';
 import {
@@ -93,7 +94,7 @@ export function AddAccountButton({
         } finally {
           // Закрываем мини-приложение: дальнейшая работа происходит вне WebApp
           try {
-            window.Telegram?.WebApp?.close();
+            miniApp.close();
           } catch (closeError) {
             if (process.env.NODE_ENV === 'development') {
               // eslint-disable-next-line no-console

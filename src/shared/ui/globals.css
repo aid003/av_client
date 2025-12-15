@@ -121,3 +121,16 @@
     @apply bg-background text-foreground overflow-x-hidden;
   }
 }
+
+/* Стили для video.js с object-fit: contain */
+.video-player-contain .vjs-tech {
+  object-fit: contain !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Убираем padding-top trick от video.js fluid mode */
+.video-player-contain.video-js {
+  padding-top: 0 !important;
+  height: 100% !important;
+}

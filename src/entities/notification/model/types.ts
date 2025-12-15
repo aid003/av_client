@@ -1,7 +1,7 @@
 // Notification types
 export type NotificationType = 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'SYSTEM';
 
-export type NotificationPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 // Main Notification entity
 export interface Notification {

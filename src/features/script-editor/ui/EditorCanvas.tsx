@@ -27,6 +27,7 @@ import {
 import type { ScriptBlockType } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge } from '../model/types';
 import { cn } from '@/shared/lib/utils';
+import { useIsMobile } from '@/shared/hooks';
 
 export function EditorCanvas() {
   const nodes = useScriptEditorNodes();
@@ -46,6 +47,7 @@ export function EditorCanvas() {
   } = useScriptEditorActions();
 
   const isPanning = useScriptEditorStore((state) => state.isPanning);
+  const isMobile = useIsMobile();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance<ScriptNode, ScriptFlowEdge> | null>(null);
@@ -231,10 +233,10 @@ export function EditorCanvas() {
         fitView
         snapToGrid
         snapGrid={[16, 16]}
-        panOnDrag={[2]}
+        panOnDrag={isMobile ? [1, 2] : [2]}
         panOnScroll={true}
         panActivationKeyCode="Space"
-        selectionOnDrag={true}
+        selectionOnDrag={!isMobile}
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode="Meta"
         deleteKeyCode={['Delete', 'Backspace']}

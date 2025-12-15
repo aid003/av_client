@@ -24,6 +24,7 @@ import {
   ChevronUp,
   FileCode,
   MessageSquare,
+  PlayCircle,
   ScrollText,
   User2,
   Users,
@@ -47,6 +48,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  { title: "Гайд", url: "/", icon: PlayCircle },
   { title: "Аккаунты", url: "/avito", icon: User2 },
   { title: "Объявления", url: "/ads", icon: ScrollText },
   { title: "Чаты", url: "/chats", icon: MessageSquare },

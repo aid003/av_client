@@ -46,10 +46,17 @@ export async function getNotificationById(
  */
 export async function createNotification(
   tenantId: string,
-  data: CreateNotificationDto
+  data: CreateNotificationDto,
+  initData?: string
 ): Promise<Notification> {
+  const headers: Record<string, string> = {};
+  if (initData) {
+    headers['x-telegram-init-data'] = initData;
+  }
+
   return apiClient.post<Notification>('/api/notifications', data, {
     params: { tenantId },
+    headers,
   });
 }
 
@@ -70,6 +77,18 @@ export async function markNotificationAsRead(
  */
 export async function markAllNotificationsAsRead(tenantId: string): Promise<void> {
   return apiClient.patch<void>('/api/notifications/read-all', undefined, {
+    params: { tenantId },
+  });
+}
+
+/**
+ * Dismiss a notification (close it)
+ */
+export async function dismissNotification(
+  tenantId: string,
+  id: string
+): Promise<Notification> {
+  return apiClient.patch<Notification>(`/api/notifications/${id}/dismiss`, undefined, {
     params: { tenantId },
   });
 }

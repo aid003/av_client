@@ -16,7 +16,19 @@ export class UserBlockedError extends Error {
 export async function authenticateTelegram(
   initData: string
 ): Promise<TelegramAuthResponse> {
-  const url = `${config.apiBaseUrl}/api/auth/telegram`;
+  // Проверка на пустой URL
+  if (!config.apiBaseUrl || config.apiBaseUrl.trim() === '') {
+    const errorMsg = 'NEXT_PUBLIC_API_BASE_URL не задана или пустая. Проверьте переменные окружения и перезапустите dev сервер.';
+    console.error("[auth/telegram] КРИТИЧЕСКАЯ ОШИБКА:", errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  // Используем Next.js API route как proxy для обхода CORS
+  // Это работает, так как запрос идет на тот же домен (Next.js сервер)
+  const url = typeof window !== 'undefined' 
+    ? '/api/auth/telegram'  // Используем Next.js API route на клиенте
+    : `${config.apiBaseUrl}/api/auth/telegram`;  // Прямой запрос на сервере
+  
   const body = { initData } as TelegramAuthRequest;
 
   let response: Response;
@@ -31,12 +43,42 @@ export async function authenticateTelegram(
       body: JSON.stringify(body),
     });
   } catch (e) {
-    throw new Error("Сервер временно недоступен. Попробуйте позже.");
-  }
+    const errorDetails: Record<string, unknown> = {
+      error: e,
+      errorType: e?.constructor?.name,
+      errorMessage: e instanceof Error ? e.message : String(e),
+      errorStack: e instanceof Error ? e.stack : undefined,
+      url,
+      attemptedUrl: url,
+      configApiBaseUrl: config.apiBaseUrl,
+      origin: typeof window !== 'undefined' ? window.location.origin : 'server',
+      isCorsError: e instanceof TypeError && e.message === 'Failed to fetch',
+    };
 
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("[auth/telegram] status:", response.status);
+    // Дополнительная диагностика для CORS
+    let fromOrigin = 'unknown';
+    if (errorDetails.isCorsError) {
+      fromOrigin = typeof window !== 'undefined' ? window.location.origin : 'unknown';
+      errorDetails.corsDiagnostics = {
+        fromOrigin,
+        toUrl: url,
+        isCrossOrigin: typeof window !== 'undefined' 
+          ? new URL(url).origin !== window.location.origin 
+          : true,
+        note: 'Это CORS ошибка. Backend должен разрешать запросы с вашего домена или используйте Next.js API route как proxy.',
+      };
+    }
+
+    console.error("[auth/telegram] Ошибка сети при запросе:", errorDetails);
+    
+    if (errorDetails.isCorsError) {
+      throw new Error(
+        `CORS ошибка: Backend ${url} не разрешает запросы с ${fromOrigin}. ` +
+        `Проверьте настройки CORS на backend или используйте Next.js API route как proxy.`
+      );
+    }
+    
+    throw new Error("Сервер временно недоступен. Попробуйте позже.");
   }
 
   if (!response.ok) {
@@ -84,19 +126,13 @@ export async function authenticateTelegram(
       const errorJson = await response.json();
       serverMessage = errorJson?.message ?? serverMessage;
       serverCode = errorJson?.code;
-      if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
-        console.log("[auth/telegram] error JSON:", errorJson);
-      }
     } catch {
       try {
         const text = await response.text();
         serverMessage = text || serverMessage;
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.log("[auth/telegram] error TEXT:", text);
-        }
-      } catch {}
+      } catch {
+        // Игнорируем ошибки парсинга
+      }
     }
     const composed = `[${response.status}] ${serverMessage}${
       serverCode ? ` (${serverCode})` : ""
@@ -105,9 +141,5 @@ export async function authenticateTelegram(
   }
 
   const data = await response.json();
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("[auth/telegram] data:", data);
-  }
   return data;
 }
