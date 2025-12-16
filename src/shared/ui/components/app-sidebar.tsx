@@ -110,8 +110,11 @@ function ProfileFooter() {
   const { mode, setMode } = useThemeStore();
 
   const tenantId = authData?.tenant.id;
-  const { getUnreadCount } = useNotificationStore();
-  const unreadCount = tenantId ? getUnreadCount(tenantId) : 0;
+
+  // Прямая подписка на unreadCount для правильной реактивности
+  const unreadCount = useNotificationStore(
+    (state) => (tenantId ? state.unreadCountByTenant[tenantId] || 0 : 0)
+  );
 
   const firstName = authData?.user.firstName ?? "";
   const lastName = authData?.user.lastName ?? "";

@@ -5,7 +5,7 @@ import type { TenantSearchParams } from '@/entities/tenant-search';
 export type SelectionMode = 'individual' | 'all';
 
 export interface UseSelectionOptions {
-  initData: string;
+  initData: string | null;
   currentFilters: Omit<TenantSearchParams, 'page' | 'perPage'>;
   totalCount: number;
 }
@@ -62,6 +62,10 @@ export function useSelection({ initData, currentFilters, totalCount }: UseSelect
     }
 
     // "all" mode: Fetch all pages to collect all tenant IDs
+    if (!initData) {
+      throw new Error('Отсутствуют данные авторизации');
+    }
+
     const allTenantIds: string[] = [];
     let page = 1;
     let hasMore = true;

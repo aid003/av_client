@@ -1,23 +1,35 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useNotificationStore } from '@/entities/notification';
 import { useNotificationSSE } from '@/features/notification-sse';
 import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
 
-const POLLING_INTERVAL = 30000; // 30 seconds
-const SSE_RETRY_THRESHOLD = 3; // После 3 неудачных попыток SSE → fallback на polling
+const BACKGROUND_SYNC_INTERVAL = 5 * 60 * 1000; // 5 минут
 
+/**
+ * Hook для синхронизации уведомлений
+ *
+ * Логика:
+ * 1. Initial fetch при монтировании
+ * 2. SSE соединение для получения уведомлений в реальном времени
+ * 3. Background sync каждые 5 минут для обеспечения синхронизации
+ *
+ * SSE является основным методом получения уведомлений.
+ * Background sync используется как страховка на случай пропуска событий.
+ */
 export function useNotificationSync() {
   const { tenantId } = useTelegramAuth();
   const { fetchNotifications } = useNotificationStore();
-  const [usePolling, setUsePolling] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initial fetch
+  // Initial fetch при монтировании
   useEffect(() => {
     if (!tenantId) {
       return;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Notification Sync] Initial fetch for tenant:', tenantId);
     }
 
     fetchNotifications(tenantId, {
@@ -26,10 +38,10 @@ export function useNotificationSync() {
     });
   }, [tenantId, fetchNotifications]);
 
-  // SSE connection
+  // SSE connection (основной метод получения уведомлений)
   const sseResult = useNotificationSSE({
     tenantId,
-    enabled: !usePolling, // Disable SSE if polling is active
+    enabled: true,
     onError: (error) => {
       if (process.env.NODE_ENV === 'development') {
         console.error('[Notification Sync] SSE error:', error);
@@ -37,58 +49,49 @@ export function useNotificationSync() {
     },
   });
 
-  // Fallback to polling if SSE fails
+  // Background sync каждые 5 минут
   useEffect(() => {
-    if (sseResult.retryCount >= SSE_RETRY_THRESHOLD && sseResult.status === 'error') {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Notification Sync] SSE failed multiple times, falling back to polling');
-      }
-      setUsePolling(true);
-    }
-  }, [sseResult.retryCount, sseResult.status]);
-
-  // Polling setup (only if SSE failed)
-  useEffect(() => {
-    if (!tenantId || !usePolling) {
+    if (!tenantId) {
       return;
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Notification Sync] Starting polling...');
+      console.log('[Notification Sync] Starting background sync (every 5 minutes)');
     }
 
-    intervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Notification Sync] Background sync triggered');
+      }
+
       fetchNotifications(tenantId, {
         activeOnly: true,
         perPage: 100,
       });
-    }, POLLING_INTERVAL);
+    }, BACKGROUND_SYNC_INTERVAL);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [tenantId, usePolling, fetchNotifications]);
-
-  // Recovery: Try SSE again if it becomes available
-  useEffect(() => {
-    if (usePolling && sseResult.status === 'connected') {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[Notification Sync] SSE recovered, disabling polling');
+        console.log('[Notification Sync] Stopping background sync');
       }
-      setUsePolling(false);
+      clearInterval(interval);
+    };
+  }, [tenantId, fetchNotifications]);
 
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+  // Логирование статуса SSE
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Notification Sync] SSE status:', {
+        status: sseResult.status,
+        error: sseResult.error,
+        retryCount: sseResult.retryCount,
+      });
     }
-  }, [usePolling, sseResult.status]);
+  }, [sseResult.status, sseResult.error, sseResult.retryCount]);
 
   return {
     sseStatus: sseResult.status,
-    isPolling: usePolling,
+    sseError: sseResult.error,
+    sseRetryCount: sseResult.retryCount,
   };
 }

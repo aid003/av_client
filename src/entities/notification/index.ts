@@ -20,7 +20,7 @@ export {
 } from './api';
 
 // Store
-export { useNotificationStore } from './model/store';
+export { useNotificationStore, subscribeToNewNotifications } from './model/store';
 
 // UI
 export { NotificationIcon, NotificationBadge } from './ui';

@@ -9,6 +9,29 @@ import {
 } from '../api';
 import { ERROR_MESSAGES } from '@/shared/lib/error-messages';
 
+// Event emitter для новых уведомлений
+const notificationEventTarget = new EventTarget();
+
+/**
+ * Подписаться на новые уведомления
+ * @param callback - Функция, вызываемая при получении нового уведомления
+ * @returns Функция отписки
+ */
+export const subscribeToNewNotifications = (
+  callback: (notification: Notification) => void
+): (() => void) => {
+  const handler = (event: Event) => {
+    const customEvent = event as CustomEvent<Notification>;
+    callback(customEvent.detail);
+  };
+
+  notificationEventTarget.addEventListener('notification:new', handler as EventListener);
+
+  return () => {
+    notificationEventTarget.removeEventListener('notification:new', handler as EventListener);
+  };
+};
+
 interface NotificationState {
   // Notifications by tenant
   notificationsByTenant: Record<string, Notification[]>;
@@ -262,6 +285,9 @@ export const useNotificationStore = create<NotificationState>()(
           });
         }
 
+        // Определяем, новое ли это уведомление
+        const isNewNotification = existingIndex === -1;
+
         if (existingIndex >= 0) {
           // Update existing
           const updated = [...notifications];
@@ -297,6 +323,16 @@ export const useNotificationStore = create<NotificationState>()(
               [tenantId]: timestamp,
             },
           }));
+
+          // Эмитировать событие только для новых уведомлений
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[NotificationStore] Emitting notification:new event for:', notification.id);
+          }
+
+          const event = new CustomEvent<Notification>('notification:new', {
+            detail: notification,
+          });
+          notificationEventTarget.dispatchEvent(event);
         }
 
         if (process.env.NODE_ENV === 'development') {

@@ -6,7 +6,7 @@ import { BroadcastForm } from '@/features/broadcast-notification';
 interface BroadcastSidebarProps {
   selectedCount: number;
   getTenantIds: () => Promise<string[]>;
-  initData: string;
+  initData: string | null;
   onSuccess?: () => void;
 }
 

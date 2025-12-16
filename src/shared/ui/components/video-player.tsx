@@ -19,18 +19,21 @@ const VJS_FULLSCREEN_BUTTON_NAME = 'AvFullscreenButton';
 if (typeof window !== 'undefined') {
   const Existing = (videojs as any).getComponent?.(VJS_FULLSCREEN_BUTTON_NAME);
   if (!Existing) {
-    const Button = videojs.getComponent('Button');
+    const Button = videojs.getComponent('Button') as any;
 
+    // Use any to bypass type checking for video.js v8 with @types/video.js v7 mismatch
     class AvFullscreenButton extends Button {
       constructor(player: any, options: any) {
         super(player, options);
-        this.controlText('Полный экран');
-        this.addClass('vjs-fullscreen-control');
-        this.addClass('vjs-icon-fullscreen-enter');
+        const self = this as any;
+        self.controlText('Полный экран');
+        self.addClass('vjs-fullscreen-control');
+        self.addClass('vjs-icon-fullscreen-enter');
       }
 
       handleClick() {
-        const player: any = this.player();
+        const self = this as any;
+        const player: any = self.player();
         const api = player?._avFullscreenApi;
         if (!api) return;
 
@@ -43,14 +46,15 @@ if (typeof window !== 'undefined') {
       }
 
       updateForState(isFs: boolean) {
+        const self = this as any;
         if (isFs) {
-          this.controlText('Выйти из полного экрана');
-          this.removeClass('vjs-icon-fullscreen-enter');
-          this.addClass('vjs-icon-fullscreen-exit');
+          self.controlText('Выйти из полного экрана');
+          self.removeClass('vjs-icon-fullscreen-enter');
+          self.addClass('vjs-icon-fullscreen-exit');
         } else {
-          this.controlText('Полный экран');
-          this.removeClass('vjs-icon-fullscreen-exit');
-          this.addClass('vjs-icon-fullscreen-enter');
+          self.controlText('Полный экран');
+          self.removeClass('vjs-icon-fullscreen-exit');
+          self.addClass('vjs-icon-fullscreen-enter');
         }
       }
     }
@@ -128,7 +132,7 @@ export function VideoJsPlayer({ src, fallbackSrc, className }: VideoJsPlayerProp
       }
 
       // Попытка 2: Стандартный Fullscreen API
-      if (document.documentElement.requestFullscreen) {
+      if (typeof document.documentElement.requestFullscreen === 'function') {
         try {
           await container.requestFullscreen();
           fullscreenModeRef.current = 'native';
@@ -262,15 +266,16 @@ export function VideoJsPlayer({ src, fallbackSrc, className }: VideoJsPlayerProp
       });
 
       // Отключаем стандартную кнопку fullscreen в video.js
-      const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
+      const controlBar = (player as any).controlBar;
+      const fullscreenToggle = controlBar?.getChild('fullscreenToggle');
       if (fullscreenToggle) {
-        player.controlBar.removeChild(fullscreenToggle);
+        controlBar.removeChild(fullscreenToggle);
       }
 
       // На всякий случай удаляем PiP toggle, если он уже добавлен
-      const pipToggle = player.controlBar.getChild('pictureInPictureToggle');
+      const pipToggle = controlBar?.getChild('pictureInPictureToggle');
       if (pipToggle) {
-        player.controlBar.removeChild(pipToggle);
+        controlBar.removeChild(pipToggle);
       }
 
       // Отключаем PiP на уровне HTMLVideoElement (если поддерживается браузером)
@@ -312,15 +317,15 @@ export function VideoJsPlayer({ src, fallbackSrc, className }: VideoJsPlayerProp
 
       // Вставляем кнопку fullscreen в нижнюю панель справа от скорости
       try {
-        const controlBar = player.controlBar;
-        const btn = controlBar.addChild(VJS_FULLSCREEN_BUTTON_NAME, {}) as any;
+        const playerControlBar = (player as any).controlBar;
+        const btn = playerControlBar.addChild(VJS_FULLSCREEN_BUTTON_NAME, {}) as any;
         (player as any)._avFullscreenButton = btn;
 
         const rateBtn =
-          controlBar.getChild('playbackRateMenuButton') ||
-          controlBar.getChild('PlaybackRateMenuButton');
+          playerControlBar.getChild('playbackRateMenuButton') ||
+          playerControlBar.getChild('PlaybackRateMenuButton');
 
-        const barEl = controlBar.el();
+        const barEl = playerControlBar.el();
         if (rateBtn && rateBtn.el && rateBtn.el()) {
           const next = rateBtn.el().nextSibling;
           if (next) barEl.insertBefore(btn.el(), next);

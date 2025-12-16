@@ -13,8 +13,11 @@ interface NotificationBellProps {
 
 export function NotificationBell({ className }: NotificationBellProps) {
   const { tenantId } = useTelegramAuth();
-  const { getUnreadCount } = useNotificationStore();
-  const unreadCount = tenantId ? getUnreadCount(tenantId) : 0;
+
+  // Прямая подписка на unreadCount для правильной реактивности
+  const unreadCount = useNotificationStore(
+    (state) => (tenantId ? state.unreadCountByTenant[tenantId] || 0 : 0)
+  );
 
   return (
     <NotificationDropdown>

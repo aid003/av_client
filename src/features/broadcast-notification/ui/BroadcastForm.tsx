@@ -29,7 +29,7 @@ import type { CreateNotificationDto, NotificationType, NotificationPriority } fr
 interface BroadcastFormProps {
   selectedCount: number;
   getTenantIds: () => Promise<string[]>;
-  initData: string;
+  initData: string | null;
   onSuccess?: () => void;
 }
 
@@ -90,6 +90,12 @@ export function BroadcastForm({
     reset();
 
     try {
+      // Check initData
+      if (!initData) {
+        setError('Отсутствуют данные авторизации');
+        return;
+      }
+
       // Get tenant IDs (may fetch all pages if "all" mode)
       const tenantIds = await getTenantIds();
 
