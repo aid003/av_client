@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useNotificationStore } from '@/entities/notification';
 import { useNotificationSSE } from '@/features/notification-sse';
 import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
+import { useAppActivityTracker } from './use-app-activity-tracker';
 
 const BACKGROUND_SYNC_INTERVAL = 5 * 60 * 1000; // 5 минут
 
@@ -21,6 +22,9 @@ const BACKGROUND_SYNC_INTERVAL = 5 * 60 * 1000; // 5 минут
 export function useNotificationSync() {
   const { tenantId } = useTelegramAuth();
   const { fetchNotifications } = useNotificationStore();
+
+  // Track app activity для определения новых уведомлений при возврате
+  useAppActivityTracker(tenantId);
 
   // Initial fetch при монтировании
   useEffect(() => {

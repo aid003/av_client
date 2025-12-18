@@ -40,6 +40,7 @@ interface NotificationState {
   errorsByTenant: Record<string, string | null>;
   lastFetchedAtByTenant: Record<string, number | null>;
   lastNotificationAddedAtByTenant: Record<string, number | null>;
+  lastActiveAtByTenant: Record<string, number | null>;
 
   // Actions
   fetchNotifications: (
@@ -52,6 +53,7 @@ interface NotificationState {
   deleteNotification: (tenantId: string, id: string) => Promise<void>;
   addNotification: (tenantId: string, notification: Notification) => void;
   updateNotification: (tenantId: string, notification: Notification) => void;
+  updateLastActiveAt: (tenantId: string) => void;
 
   // Selectors (computed values)
   getUnreadNotifications: (tenantId: string) => Notification[];
@@ -78,6 +80,7 @@ export const useNotificationStore = create<NotificationState>()(
       errorsByTenant: {},
       lastFetchedAtByTenant: {},
       lastNotificationAddedAtByTenant: {},
+      lastActiveAtByTenant: {},
 
       // === Fetch Notifications ===
       fetchNotifications: async (
@@ -135,6 +138,42 @@ export const useNotificationStore = create<NotificationState>()(
               [tenantId]: null,
             },
           }));
+
+          // Эмитим события для уведомлений, которые пришли с момента последней активности
+          const currentState = get();
+          const lastActiveAt = currentState.lastActiveAtByTenant[tenantId] || null;
+          const existingNotifications = state.notificationsByTenant[tenantId] || [];
+
+          // Только если есть lastActiveAt (не первый визит)
+          if (lastActiveAt) {
+            // Создать Set существующих ID для проверки
+            const existingIds = new Set(existingNotifications.map((n) => n.id));
+
+            sortedNotifications.forEach((notification) => {
+              const isNewNotification = !existingIds.has(notification.id);
+              const createdAt = new Date(notification.createdAt).getTime();
+              const wasCreatedWhileAway = createdAt > lastActiveAt;
+
+              // Эмитим событие если уведомление новое ИЛИ создано пока пользователь был неактивен
+              if (isNewNotification || wasCreatedWhileAway) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[NotificationStore] Emitting notification:new from fetch:', {
+                    id: notification.id,
+                    title: notification.title,
+                    isNewNotification,
+                    wasCreatedWhileAway,
+                    createdAt: notification.createdAt,
+                    lastActiveAt: new Date(lastActiveAt).toISOString(),
+                  });
+                }
+
+                const event = new CustomEvent<Notification>('notification:new', {
+                  detail: notification,
+                });
+                notificationEventTarget.dispatchEvent(event);
+              }
+            });
+          }
         } catch (err) {
           const errorMessage =
             err instanceof Error
@@ -405,15 +444,36 @@ export const useNotificationStore = create<NotificationState>()(
           };
         });
       },
+
+      // === Update Last Active At ===
+      updateLastActiveAt: (tenantId: string) => {
+        set((state) => ({
+          lastActiveAtByTenant: {
+            ...state.lastActiveAtByTenant,
+            [tenantId]: Date.now(),
+          },
+        }));
+      },
     }),
     {
       name: 'notifications-store',
-      version: 1,
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        // Миграция с версии 1 на версию 2: добавляем lastActiveAtByTenant
+        if (version === 1) {
+          return {
+            ...(persistedState as object),
+            lastActiveAtByTenant: {},
+          };
+        }
+        return persistedState as NotificationState;
+      },
       partialize: (state) => ({
         notificationsByTenant: state.notificationsByTenant,
         unreadCountByTenant: state.unreadCountByTenant,
         lastFetchedAtByTenant: state.lastFetchedAtByTenant,
         lastNotificationAddedAtByTenant: state.lastNotificationAddedAtByTenant,
+        lastActiveAtByTenant: state.lastActiveAtByTenant,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -424,6 +484,7 @@ export const useNotificationStore = create<NotificationState>()(
         // Clean stale timestamps (older than 24h)
         const cleanedLastFetched: Record<string, number | null> = {};
         const cleanedLastAdded: Record<string, number | null> = {};
+        const cleanedLastActive: Record<string, number | null> = {};
 
         for (const tenantId in state.lastFetchedAtByTenant) {
           const timestamp = state.lastFetchedAtByTenant[tenantId];
@@ -439,8 +500,16 @@ export const useNotificationStore = create<NotificationState>()(
           }
         }
 
+        for (const tenantId in state.lastActiveAtByTenant) {
+          const timestamp = state.lastActiveAtByTenant[tenantId];
+          if (timestamp && (now - timestamp < MAX_AGE)) {
+            cleanedLastActive[tenantId] = timestamp;
+          }
+        }
+
         state.lastFetchedAtByTenant = cleanedLastFetched;
         state.lastNotificationAddedAtByTenant = cleanedLastAdded;
+        state.lastActiveAtByTenant = cleanedLastActive;
 
         if (process.env.NODE_ENV === 'development') {
           console.log('[NotificationStore] Cleaned stale timestamps');
