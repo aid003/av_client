@@ -110,7 +110,7 @@ export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Объявления</h2>
           {meta && (
@@ -119,7 +119,7 @@ export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:gap-2">
           <ColumnSettingsDropdown table={table} tenantId={tenantId} />
           <SyncAvitoAdsButton tenantId={tenantId} onSuccess={handleSyncSuccess} />
         </div>

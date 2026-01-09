@@ -163,7 +163,12 @@ export function useNotificationSSE(options: UseNotificationSSEOptions): UseNotif
         }
       });
 
-      // Обработчик ошибок
+      // Обработчик серверных ошибок (event: error от сервера)
+      // Примечание: EventSource API не поддерживает кастомные события с типом 'error'
+      // Серверные ошибки обрабатываются через общий error handler ниже
+      // Если сервер отправляет event: error, это вызовет общий error handler
+
+      // Обработчик ошибок соединения
       es.addEventListener('error', (event: Event) => {
         console.error('[SSE] Connection error:', event);
 

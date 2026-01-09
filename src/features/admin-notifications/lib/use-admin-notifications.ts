@@ -154,10 +154,10 @@ export function useAdminNotifications({ tenantId }: UseAdminNotificationsOptions
 
   const handleDelete = useCallback(
     async (id: string) => {
-      if (!tenantId) return;
+      if (!tenantId || !initData) return;
 
       try {
-        await deleteNotification(tenantId, id);
+        await deleteNotification(tenantId, id, initData);
         // Удаляем из списка
         setNotifications((prev) => prev.filter((n) => n.id !== id));
         // Перезагружаем для обновления счетчиков
@@ -167,7 +167,7 @@ export function useAdminNotifications({ tenantId }: UseAdminNotificationsOptions
         throw err;
       }
     },
-    [tenantId, loadNotifications]
+    [tenantId, initData, loadNotifications]
   );
 
   const updateFilters = useCallback((newFilters: Partial<Filters>) => {
@@ -184,6 +184,74 @@ export function useAdminNotifications({ tenantId }: UseAdminNotificationsOptions
     setPage(newPage);
   }, []);
 
+  const handleBulkDelete = useCallback(
+    async (ids: string[]) => {
+      if (!tenantId || !initData) return { success: [], failed: [] };
+
+      setLoading(true);
+      const results = {
+        success: [] as string[],
+        failed: [] as Array<{ id: string; error: string }>,
+      };
+
+      const chunks = chunk(ids, 5);
+
+      for (const chunkIds of chunks) {
+        const promises = chunkIds.map(async (id) => {
+          try {
+            await deleteNotification(tenantId, id, initData);
+            results.success.push(id);
+          } catch (err) {
+            results.failed.push({
+              id,
+              error: err instanceof Error ? err.message : 'Неизвестная ошибка',
+            });
+          }
+        });
+        await Promise.all(promises);
+      }
+
+      await loadNotifications();
+      setLoading(false);
+      return results;
+    },
+    [tenantId, initData, loadNotifications]
+  );
+
+  const handleBulkDismiss = useCallback(
+    async (ids: string[]) => {
+      if (!tenantId) return { success: [], failed: [] };
+
+      setLoading(true);
+      const results = {
+        success: [] as string[],
+        failed: [] as Array<{ id: string; error: string }>,
+      };
+
+      const chunks = chunk(ids, 5);
+
+      for (const chunkIds of chunks) {
+        const promises = chunkIds.map(async (id) => {
+          try {
+            await dismissNotification(tenantId, id);
+            results.success.push(id);
+          } catch (err) {
+            results.failed.push({
+              id,
+              error: err instanceof Error ? err.message : 'Неизвестная ошибка',
+            });
+          }
+        });
+        await Promise.all(promises);
+      }
+
+      await loadNotifications();
+      setLoading(false);
+      return results;
+    },
+    [tenantId, loadNotifications]
+  );
+
   return {
     notifications,
     loading,
@@ -198,10 +266,23 @@ export function useAdminNotifications({ tenantId }: UseAdminNotificationsOptions
     handleMarkAsRead,
     handleDismiss,
     handleDelete,
+    handleBulkDelete,
+    handleBulkDismiss,
     updateFilters,
     resetFilters,
     goToPage,
     refresh: loadNotifications,
   };
+}
+
+/**
+ * Utility function to split array into chunks
+ */
+function chunk<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 }
 

@@ -33,12 +33,42 @@ interface BroadcastFormProps {
   onSuccess?: () => void;
 }
 
+/**
+ * Конвертирует ISO строку в формат datetime-local (локальное время)
+ */
+function isoToDatetimeLocal(iso: string): string {
+  const date = new Date(iso);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * Конвертирует datetime-local строку в ISO формат
+ */
+function datetimeLocalToIso(value: string): string {
+  // Парсим YYYY-MM-DDTHH:mm в локальное время
+  const [datePart, timePart] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+  
+  // Создаем Date в локальном времени
+  const date = new Date(year, month - 1, day, hours, minutes);
+  return date.toISOString();
+}
+
 export function BroadcastForm({
   selectedCount,
   getTenantIds,
   initData,
   onSuccess,
 }: BroadcastFormProps) {
+  // Устанавливаем дефолт: текущее время + 2 дня в ISO формате
+  const defaultExpiresAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
   const [formData, setFormData] = useState<CreateNotificationDto>({
     type: 'INFO',
     priority: 'MEDIUM',
@@ -47,7 +77,7 @@ export function BroadcastForm({
     isDismissible: true,
     actionUrl: '',
     actionLabel: '',
-    expiresAt: null,
+    expiresAt: defaultExpiresAt,
     metadata: undefined,
   });
 
@@ -129,7 +159,7 @@ export function BroadcastForm({
           isDismissible: true,
           actionUrl: '',
           actionLabel: '',
-          expiresAt: null,
+          expiresAt: defaultExpiresAt,
           metadata: undefined,
         });
 
@@ -306,13 +336,13 @@ export function BroadcastForm({
             type="datetime-local"
             value={
               formData.expiresAt
-                ? new Date(formData.expiresAt).toISOString().slice(0, 16)
+                ? isoToDatetimeLocal(formData.expiresAt)
                 : ''
             }
             onChange={(e) =>
               setFormData({
                 ...formData,
-                expiresAt: e.target.value || null,
+                expiresAt: e.target.value ? datetimeLocalToIso(e.target.value) : null,
               })
             }
             disabled={isFormDisabled}

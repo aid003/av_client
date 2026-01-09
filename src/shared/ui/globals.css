@@ -76,6 +76,8 @@
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+  --scrollbar-track: var(--background);
+  --scrollbar-thumb: var(--border);
 }
 
 .dark {
@@ -110,15 +112,31 @@
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
+  --scrollbar-track: var(--background);
+  --scrollbar-thumb: var(--muted);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
   html,
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid var(--scrollbar-track);
   }
 }
 
@@ -133,4 +151,52 @@
 .video-player-contain.video-js {
   padding-top: 0 !important;
   height: 100% !important;
+}
+
+/* Стили для ReactFlow Controls и MiniMap в тёмной теме */
+.dark .react-flow__controls-button {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--muted-foreground) !important;
+}
+
+.dark .react-flow__controls-button:hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.dark .react-flow__controls-button svg {
+  fill: var(--muted-foreground) !important;
+  stroke: var(--muted-foreground) !important;
+}
+
+.dark .react-flow__controls-button:hover svg {
+  fill: var(--accent-foreground) !important;
+  stroke: var(--accent-foreground) !important;
+}
+
+.dark .react-flow__minimap {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .react-flow__minimap-mask {
+  fill: var(--background) !important;
+  fill-opacity: 0.5 !important;
+}
+
+.dark .react-flow__minimap-node {
+  fill: var(--card) !important;
+  stroke: var(--border) !important;
+}
+
+/* Floating menu button - показывать только на мобильных (< 768px) */
+.floating-menu-button {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .floating-menu-button {
+    display: none !important;
+  }
 }

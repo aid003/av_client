@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useIsMobile } from '@/shared/hooks/use-mobile';
 import { useTelegramInitData } from '@/shared/lib/use-telegram-init-data';
 import { Button } from '@/shared/ui/components/ui/button';
@@ -51,23 +51,36 @@ export function BroadcastPanel() {
     totalCount: meta?.total || 0,
   });
 
-  // Load initial data
+  // Track if component has mounted to avoid duplicate initial load
+  const hasMountedRef = useRef(false);
+  const prevFiltersRef = useRef<string>('');
+
+  // Serialize filters to string for comparison
+  const filtersKey = `${filters.search || ''}|${filters.registeredFrom || ''}`;
+
+  // Load initial data and reload when filters change
   useEffect(() => {
-    if (initData) {
+    if (!initData) return;
+
+    // On first mount, just load initial data
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      prevFiltersRef.current = filtersKey;
+      loadInitial(initData);
+      return;
+    }
+
+    // If filters actually changed, reload
+    if (prevFiltersRef.current !== filtersKey && !isLoading) {
+      prevFiltersRef.current = filtersKey;
       loadInitial(initData);
     }
 
     return () => {
       resetSearch();
     };
-  }, [initData, loadInitial, resetSearch]);
-
-  // Reload when filters change
-  useEffect(() => {
-    if (initData) {
-      loadInitial(initData);
-    }
-  }, [filters, initData, loadInitial]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initData, filtersKey, isLoading]); // Use filtersKey instead of filters object
 
   const handleLoadMore = () => {
     if (initData && !isLoadingMore && hasMore) {
@@ -85,7 +98,7 @@ export function BroadcastPanel() {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+      <div className="h-[calc(var(--app-dvh,100dvh)-3rem)] flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
           {/* Header */}
           <div>
@@ -175,7 +188,7 @@ export function BroadcastPanel() {
 
   // Desktop layout
   return (
-    <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Рассылка уведомлений</h1>

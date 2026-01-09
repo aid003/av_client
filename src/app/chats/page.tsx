@@ -66,7 +66,7 @@ export default function ChatsPage() {
   if (isMobile) {
     return (
       <>
-        <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden overflow-x-hidden">
+        <div className="h-[calc(var(--app-dvh,100dvh)-3rem)] flex flex-col overflow-hidden overflow-x-hidden">
           {!selectedChat && (
             <div className="flex-1 overflow-y-auto p-4">
               <AvitoChatsList
@@ -97,7 +97,7 @@ export default function ChatsPage() {
 
   // Десктопная версия: двухпанельный layout
   return (
-    <div className="h-[calc(100vh-3rem)] flex overflow-hidden overflow-x-hidden">
+    <div className="h-[calc(var(--app-dvh,100dvh)-max(2rem,calc(env(safe-area-inset-top,0px)+0.5rem)))] md:h-[calc(var(--app-dvh,100dvh)-3rem)] flex overflow-hidden overflow-x-hidden">
       {/* Левая панель со списком чатов */}
       <div className="w-full md:w-1/3 lg:w-1/4 border-r flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4">

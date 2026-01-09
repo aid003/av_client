@@ -12,18 +12,23 @@ import {
   initData,
   retrieveLaunchParams,
   themeParams,
+  viewport,
 } from "@tma.js/sdk-react";
 
 interface TelegramContextValue {
   isInitialized: boolean;
   initData: string | null;
   colorScheme: "light" | "dark";
+  isViewportMounted: boolean;
+  isFullscreen: boolean;
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
   isInitialized: false,
   initData: null,
   colorScheme: "dark",
+  isViewportMounted: false,
+  isFullscreen: false,
 });
 
 export function useTelegram() {
@@ -44,6 +49,8 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [rawInitData, setRawInitData] = useState<string | null>(null);
   const [colorScheme, setColorScheme] = useState<"light" | "dark">("dark");
+  const [isViewportMounted, setIsViewportMounted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     try {
@@ -103,6 +110,40 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       }
 
       setIsInitialized(true);
+
+      // Монтируем viewport и переходим в полноэкранный режим
+      const mountViewport = async () => {
+        try {
+          // Монтируем viewport
+          await viewport.mount();
+          setIsViewportMounted(true);
+
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.log("Viewport mounted successfully");
+          }
+
+          // После успешного монтирования переходим в fullscreen
+          await viewport.requestFullscreen();
+          setIsFullscreen(true);
+
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.log("Fullscreen mode activated");
+          }
+        } catch (viewportError) {
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "Viewport mount/fullscreen error (may be unsupported):",
+              viewportError
+            );
+          }
+          // Приложение продолжает работать без fullscreen
+        }
+      };
+
+      mountViewport();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         // eslint-disable-next-line no-console
@@ -167,7 +208,13 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
   return (
     <TelegramContext.Provider
-      value={{ isInitialized, initData: rawInitData, colorScheme }}
+      value={{ 
+        isInitialized, 
+        initData: rawInitData, 
+        colorScheme,
+        isViewportMounted,
+        isFullscreen
+      }}
     >
       {children}
     </TelegramContext.Provider>

@@ -34,7 +34,7 @@ export default function KnowledgeBasePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-3xl font-bold">Базы знаний</h1>
         {knowledgeBases.length > 0 && (
           <CreateKnowledgeBaseButton tenantId={authData.tenant.id} />

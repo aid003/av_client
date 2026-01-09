@@ -95,12 +95,20 @@ export async function dismissNotification(
 
 /**
  * Delete a notification
+ * Requires ADMIN role - initData must be provided
  */
 export async function deleteNotification(
   tenantId: string,
-  id: string
+  id: string,
+  initData?: string
 ): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (initData) {
+    headers['x-telegram-init-data'] = initData;
+  }
+
   return apiClient.delete<void>(`/api/notifications/${id}`, undefined, {
     params: { tenantId },
+    headers,
   });
 }

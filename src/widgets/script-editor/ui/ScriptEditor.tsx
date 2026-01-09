@@ -92,7 +92,7 @@ export function ScriptEditor({
 
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-[calc(100vh-3rem)] bg-background relative">
+      <div className="flex flex-col h-[calc(var(--app-dvh,100dvh)-3rem)] bg-background relative">
         <EditorHeader tenantId={tenantId} />
 
         <div className="flex flex-1">
@@ -125,7 +125,7 @@ export function ScriptEditor({
 
 function ScriptEditorSkeleton() {
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
+    <div className="flex flex-col h-[calc(var(--app-dvh,100dvh)-3rem)] bg-background">
       {/* Header skeleton */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-4">

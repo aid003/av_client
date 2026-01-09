@@ -75,7 +75,7 @@ export default function LeadsPage() {
   if (isMobile) {
     return (
       <>
-        <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+        <div className="h-[calc(var(--app-dvh,100dvh)-3rem)] flex flex-col overflow-hidden">
           {!selectedLead && (
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
               <h1 className="text-2xl sm:text-3xl font-bold">Лиды</h1>
@@ -114,7 +114,7 @@ export default function LeadsPage() {
 
   // Desktop version: two-panel layout
   return (
-    <div className="h-[calc(100vh-3rem)] flex overflow-hidden">
+    <div className="h-[calc(var(--app-dvh,100dvh)-max(2rem,calc(env(safe-area-inset-top,0px)+0.5rem)))] md:h-[calc(var(--app-dvh,100dvh)-3rem)] flex overflow-hidden">
       {/* Left panel with filters and list */}
       <div className="w-full md:w-2/5 lg:w-1/3 xl:w-1/4 border-r flex flex-col overflow-hidden">
         <div className="p-3 md:p-4 border-b space-y-3 md:space-y-4 shrink-0">

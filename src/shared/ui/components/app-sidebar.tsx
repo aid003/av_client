@@ -19,6 +19,7 @@ import {
   useSidebar,
 } from "@/shared/ui/components/ui/sidebar";
 import {
+  Bell,
   BookText,
   ChevronDown,
   ChevronUp,
@@ -26,20 +27,12 @@ import {
   MessageSquare,
   PlayCircle,
   ScrollText,
+  Settings,
   User2,
   Users,
 } from "lucide-react";
 import { useTelegramAuth } from "@/shared/lib/use-telegram-auth";
-import { useThemeStore, type ThemeMode } from "@/shared/lib/store";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/components/ui/select";
 import { useNotificationStore, NotificationBadge } from "@/entities/notification";
-import { Bell } from "lucide-react";
 
 type NavItem = {
   title: string;
@@ -65,10 +58,21 @@ export function AppSidebar() {
       setOpenMobile(false);
     }
   };
+  const mobileMenuItemClassName = isMobile
+    ? "h-11 px-3 text-base gap-3 [&>svg]:size-5"
+    : undefined;
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="pt-3 pb-1 px-2" />
+      {/* На мобильном добавляем больший отступ сверху для Telegram header */}
+      <SidebarHeader 
+        className="pb-1 px-2"
+        style={{
+          paddingTop: isMobile 
+            ? 'max(4rem, calc(env(safe-area-inset-top, 0px) + 2.5rem))' 
+            : '0.75rem'
+        }}
+      />
 
       <SidebarContent>
         <SidebarGroup>
@@ -77,7 +81,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    className={mobileMenuItemClassName}
+                  >
                     <Link href={item.url} onClick={handleMenuItemClick}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -105,9 +113,9 @@ export function AppSidebar() {
 
 function ProfileFooter() {
   const { authData } = useTelegramAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const { mode, setMode } = useThemeStore();
 
   const tenantId = authData?.tenant.id;
 
@@ -122,6 +130,13 @@ function ProfileFooter() {
   const photoUrl = authData?.user.photoUrl;
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ") || "Пользователь";
+
+  const handleFooterLinkClick = () => {
+    setOpen(false);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -176,20 +191,10 @@ function ProfileFooter() {
 
       {open ? (
         <div className="bg-sidebar text-sidebar-foreground border-sidebar-border absolute bottom-12 left-2 right-2 z-50 rounded-md border shadow-sm">
-          <div className="flex items-center gap-3 p-3">
-            <Avatar size={36} photoUrl={photoUrl} name={fullName} showBadge={true} badgeCount={unreadCount} />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium">{fullName}</div>
-              {username ? (
-                <div className="truncate text-xs opacity-70">@{username}</div>
-              ) : null}
-            </div>
-          </div>
-          <SidebarSeparator className="mx-0" />
           <div className="p-1">
             <Link
               href="/notifications"
-              onClick={() => setOpen(false)}
+              onClick={handleFooterLinkClick}
               className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors"
             >
               <Bell className="h-4 w-4" />
@@ -201,24 +206,14 @@ function ProfileFooter() {
               )}
             </Link>
             <SidebarSeparator className="my-1" />
-            <div className="px-2 py-2">
-              <label className="text-sidebar-foreground text-xs font-medium mb-1.5 block">
-                Тема
-              </label>
-              <Select
-                value={mode}
-                onValueChange={(value) => setMode(value as ThemeMode)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent side="right" align="start">
-                  <SelectItem value="auto">Авто (Telegram)</SelectItem>
-                  <SelectItem value="light">Светлая</SelectItem>
-                  <SelectItem value="dark">Темная</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Link
+              href="/settings"
+              onClick={handleFooterLinkClick}
+              className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="flex-1">Настройки</span>
+            </Link>
           </div>
         </div>
       ) : null}
@@ -275,15 +270,4 @@ function Avatar({
   }
 
   return avatarElement;
-}
-
-function MenuRow({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center rounded-md px-2 py-2 text-sm"
-    >
-      <span className="truncate">{label}</span>
-    </button>
-  );
 }

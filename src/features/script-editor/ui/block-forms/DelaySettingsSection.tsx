@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, HelpCircle } from 'lucide-react';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Input } from '@/shared/ui/components/ui/input';
 import { Slider } from '@/shared/ui/components/ui/slider';
 import { Badge } from '@/shared/ui/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/components/ui/tooltip';
 
 interface DelaySettingsSectionProps {
   value: number | undefined;
@@ -58,6 +59,17 @@ export function DelaySettingsSection({ value, onChange }: DelaySettingsSectionPr
             <ChevronRight className="w-4 h-4" />
           )}
           <span>Задержка перед отправкой</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">
+                Эта задержка складывается с задержкой прочтения из общих настроек. 
+                Итоговое время ожидания ответа увеличится на сумму обеих задержек.
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         <Badge variant={hasDelay ? 'default' : 'secondary'} className="text-xs">
           {formatDelay(value)}

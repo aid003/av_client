@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useCallback, type ReactNode } from 'react';
 import { useTelegram } from './TelegramProvider';
-import { useThemeStore } from '@/shared/lib/store';
+import { useTelegramAuth } from '@/shared/lib/use-telegram-auth';
+import { useUserSettingsStore } from '@/entities/user-settings';
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -10,7 +11,15 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { isInitialized, colorScheme: telegramColorScheme } = useTelegram();
-  const mode = useThemeStore((state) => state.mode);
+  const { authData } = useTelegramAuth();
+  const tenantId = authData?.tenant.id;
+  const mode = useUserSettingsStore(
+    useCallback(
+      (state) =>
+        tenantId ? state.settingsByTenant[tenantId]?.theme ?? 'auto' : 'auto',
+      [tenantId]
+    )
+  );
 
   useEffect(() => {
     if (!isInitialized) {
@@ -33,4 +42,3 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   return <>{children}</>;
 }
-

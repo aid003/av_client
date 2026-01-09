@@ -11,6 +11,7 @@ import {
 } from '@/shared/ui/components/ui/table';
 import { Button } from '@/shared/ui/components/ui/button';
 import { Badge } from '@/shared/ui/components/ui/badge';
+import { Checkbox } from '@/shared/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,12 @@ interface NotificationsTableProps {
   onMarkAsRead: (id: string) => Promise<void>;
   onDismiss: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
+  isSomeSelected?: boolean;
 }
 
 const typeColors: Record<string, string> = {
@@ -72,6 +79,12 @@ export function NotificationsTable({
   onMarkAsRead,
   onDismiss,
   onDelete,
+  selectable = false,
+  selectedIds = new Set(),
+  onToggleSelection,
+  onSelectAll,
+  isAllSelected = false,
+  isSomeSelected = false,
 }: NotificationsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
@@ -149,6 +162,15 @@ export function NotificationsTable({
         <Table>
           <TableHeader>
             <TableRow>
+              {selectable && (
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={isSomeSelected && !isAllSelected ? 'indeterminate' : isAllSelected}
+                    onCheckedChange={onSelectAll}
+                    aria-label="Выбрать все"
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[100px]">Тип</TableHead>
               <TableHead className="w-[100px]">Приоритет</TableHead>
               <TableHead>Заголовок</TableHead>
@@ -164,6 +186,15 @@ export function NotificationsTable({
 
               return (
                 <TableRow key={notification.id}>
+                  {selectable && (
+                    <TableCell className="w-[50px]">
+                      <Checkbox
+                        checked={selectedIds.has(notification.id)}
+                        onCheckedChange={() => onToggleSelection?.(notification.id)}
+                        aria-label={`Выбрать ${notification.title}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Badge
                       variant="outline"

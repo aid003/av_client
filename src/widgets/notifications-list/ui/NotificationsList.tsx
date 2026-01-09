@@ -18,23 +18,26 @@ export function NotificationsList({ tenantId }: NotificationsListProps) {
     errorsByTenant,
     markAllAsRead,
     getUnreadCount,
+    lastFetchedAtByTenant,
   } = useNotificationStore();
 
   const notifications = getNotificationsByTenant(tenantId);
   const isLoading = loadingByTenant[tenantId] ?? false;
   const error = errorsByTenant[tenantId];
   const unreadCount = getUnreadCount(tenantId);
+  const lastFetchedAt = lastFetchedAtByTenant[tenantId];
 
-  // Загрузка при монтировании (если данных ещё нет)
+  // Загрузка при монтировании (если данных ещё не загружали)
   // Глобальный polling уже происходит в useNotificationSync
   useEffect(() => {
-    if (notifications.length === 0 && !isLoading) {
+    // Загружаем только если никогда не загружали данные для этого tenant
+    if (!lastFetchedAt && !isLoading) {
       fetchNotifications(tenantId, {
         activeOnly: true,
         perPage: 100,
       });
     }
-  }, [tenantId, fetchNotifications, notifications.length, isLoading]);
+  }, [tenantId, fetchNotifications, lastFetchedAt, isLoading]);
 
   const handleMarkAllAsRead = async () => {
     try {

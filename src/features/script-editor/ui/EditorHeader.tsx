@@ -17,6 +17,7 @@ import {
   useScriptEditorMeta,
   useScriptEditorStatus,
   useScriptEditorActions,
+  useScriptEditorValidation,
 } from '../model/store';
 import { isDefinitionValid } from '../model/validators';
 import {
@@ -61,6 +62,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const router = useRouter();
   const meta = useScriptEditorMeta();
   const status = useScriptEditorStatus();
+  const validation = useScriptEditorValidation();
   const {
     getDefinition,
     setSaving,
@@ -74,6 +76,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
   const [validationResult, setValidationResult] = useState<ScriptValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [showSlotsDialog, setShowSlotsDialog] = useState(false);
   const [showLLMSettingsDialog, setShowLLMSettingsDialog] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -87,6 +90,16 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
       return () => clearTimeout(timer);
     }
   }, [validationResult]);
+
+  useEffect(() => {
+    if (saveSuccess) {
+      const timer = setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [saveSuccess]);
 
   useEffect(() => {
     if (status.error) {
@@ -114,7 +127,6 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setValidationResult(null); // Очищаем результат валидации при сохранении
     clearValidation();
 
     try {
@@ -124,10 +136,19 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
       if (!meta.scriptId) {
         // Валидируем структуру перед созданием
         if (!isDefinitionValid(definition)) {
-          setError(
-            'Скрипт должен содержать блок START и хотя бы одно ребро с условием ALWAYS от START'
-          );
-          setSaving(false);
+          // Ошибка валидации структуры — показываем там же, где и при "Проверить"
+          setValidationResultInStore({
+            isValid: false,
+            errors: [
+              {
+                severity: 'error',
+                code: 'CLIENT_STRUCTURE_INVALID',
+                message:
+                  'Скрипт должен содержать блок START и хотя бы одно ребро с условием ALWAYS от START',
+              },
+            ],
+            warnings: [],
+          });
           return;
         }
 
@@ -157,6 +178,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
         // Редирект на страницу редактирования
         router.push(`/sales-scripts/${newScript.id}/edit`);
         markClean();
+        setSaveSuccess(true);
       } else {
         // Обновляем существующий скрипт
         await updateSalesScript(meta.scriptId, tenantId, {
@@ -165,6 +187,7 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
           definition,
         });
         markClean();
+        setSaveSuccess(true);
       }
     } catch (err) {
       // Обработка ошибок валидации от API (400)
@@ -174,14 +197,20 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
           // Преобразуем и устанавливаем ошибки валидации
           const { errors, warnings } = convertValidationErrorsToIssues(errorData.errors);
           setValidationResultInStore({ isValid: false, errors, warnings });
-
-          // Показываем общее сообщение об ошибках
-          setError(
-            `Обнаружено ${errorData.errors.length} ${errorData.errors.length === 1 ? 'ошибка' : 'ошибок'} валидации`
-          );
+          // Ошибки валидации отображаются через GlobalValidationErrors во всплывающем окне
         } else {
-          // Обычная ошибка 400 без массива errors
-          setError(errorData.message || err.message || 'Ошибка при сохранении');
+          // 400 без массива errors — тоже считаем валидацией и показываем как popup
+          setValidationResultInStore({
+            isValid: false,
+            errors: [
+              {
+                severity: 'error',
+                code: 'API_BAD_REQUEST',
+                message: errorData.message || err.message || 'Ошибка при сохранении',
+              },
+            ],
+            warnings: [],
+          });
         }
       } else {
         setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
@@ -258,10 +287,17 @@ export function EditorHeader({ tenantId }: EditorHeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Validation result or Save error */}
-        {(validationResult || status.error) && (
+        {/* Validation result, Save success or Save error */}
+        {(validationResult || saveSuccess || (status.error && validation.errors.length === 0)) && (
           <div className="flex items-center gap-1.5 mr-2">
-            {validationResult ? (
+            {saveSuccess ? (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-green-600 dark:text-green-400">
+                  Успешно сохранено
+                </span>
+              </>
+            ) : validationResult ? (
               validationResult.errors.length > 0 ? (
                 <>
                   <AlertCircle className="w-4 h-4 text-destructive" />

@@ -18,6 +18,7 @@ import {
   Clipboard,
   FileText,
 } from 'lucide-react';
+import { postEvent, on, type EventListener } from '@tma.js/sdk';
 import {
   uploadText,
   getChunks,
@@ -110,23 +111,37 @@ export function UploadMaterialsDialog({
   };
 
   const handlePasteFromClipboard = () => {
-    // Используем Telegram WebApp API для чтения буфера обмена
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.readTextFromClipboard) {
-      try {
-        window.Telegram.WebApp.readTextFromClipboard((clipboardText: string | null) => {
-          if (clipboardText) {
-            setText((prev) => prev + clipboardText);
+    try {
+      // Генерируем уникальный ID запроса
+      const reqId = `clipboard_${Date.now()}_${Math.random()}`;
+      
+      // Создаем обработчик события
+      const handleClipboardEvent: EventListener<'clipboard_text_received'> = (event) => {
+        if (event.req_id === reqId) {
+          if (event.data !== null && event.data !== '') {
+            setText((prev) => prev + event.data);
             setUploadError(null);
           } else {
-            setUploadError('Буфер обмена пуст');
+            setUploadError('Буфер обмена пуст или доступ запрещен');
           }
-        });
-      } catch (err) {
-        console.error('Ошибка при чтении буфера обмена:', err);
-        setUploadError('Не удалось прочитать буфер обмена. Эта функция работает только для ботов в меню вложений.');
-      }
-    } else {
-      setUploadError('Telegram WebApp API недоступен или бот не добавлен в меню вложений');
+          // Отписываемся от события после получения результата
+          cleanup();
+        }
+      };
+      
+      // Подписываемся на событие
+      const cleanup = on('clipboard_text_received', handleClipboardEvent);
+      
+      // Вызываем метод чтения буфера обмена
+      postEvent('web_app_read_text_from_clipboard', { req_id: reqId });
+      
+      // Таймаут на случай, если событие не придет
+      setTimeout(() => {
+        cleanup();
+      }, 5000);
+    } catch (error) {
+      console.error('Ошибка при чтении буфера обмена:', error);
+      setUploadError('Не удалось прочитать буфер обмена');
     }
   };
 
