@@ -145,7 +145,9 @@ export function ToastContainer() {
   }
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3">
+    <div 
+      className="fixed left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 top-28 md:top-16"
+    >
       {toasts.map((toast) => (
         <ToastNotification
           key={toast.id}

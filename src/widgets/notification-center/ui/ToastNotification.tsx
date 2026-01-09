@@ -16,36 +16,40 @@ interface ToastNotificationProps {
 }
 
 function getNotificationColorClass(type: Notification['type']): string {
+  // В светлой теме - темный фон, в темной теме - светлый фон (для контраста)
+  const baseBg = 'bg-slate-900 dark:bg-white backdrop-blur-sm';
+  
   switch (type) {
     case 'ERROR':
-      return 'border-destructive/50 bg-destructive/10 dark:bg-destructive/20';
+      return `border-red-500 dark:border-red-600 ${baseBg}`;
     case 'WARNING':
-      return 'border-yellow-500/50 bg-yellow-500/10 dark:bg-yellow-500/20';
+      return `border-yellow-500 dark:border-yellow-600 ${baseBg}`;
     case 'SUCCESS':
-      return 'border-green-500/50 bg-green-500/10 dark:bg-green-500/20';
+      return `border-green-500 dark:border-green-600 ${baseBg}`;
     case 'INFO':
-      return 'border-primary/50 bg-primary/10 dark:bg-primary/20';
+      return `border-blue-500 dark:border-blue-600 ${baseBg}`;
     case 'SYSTEM':
-      return 'border-muted-foreground/50 bg-muted/50';
+      return `border-slate-600 dark:border-slate-400 ${baseBg}`;
     default:
-      return 'border-border bg-card';
+      return `border-slate-600 dark:border-slate-400 ${baseBg}`;
   }
 }
 
 function getIconColorClass(type: Notification['type']): string {
+  // В светлой теме (темный фон уведомления) - светлые иконки, в темной теме (светлый фон) - темные иконки
   switch (type) {
     case 'ERROR':
-      return 'text-destructive';
+      return 'text-red-400 dark:text-red-600';
     case 'WARNING':
-      return 'text-yellow-600 dark:text-yellow-400';
+      return 'text-yellow-400 dark:text-yellow-600';
     case 'SUCCESS':
-      return 'text-green-600 dark:text-green-400';
+      return 'text-green-400 dark:text-green-600';
     case 'INFO':
-      return 'text-primary';
+      return 'text-blue-400 dark:text-blue-600';
     case 'SYSTEM':
-      return 'text-muted-foreground';
+      return 'text-slate-400 dark:text-slate-600';
     default:
-      return 'text-muted-foreground';
+      return 'text-slate-400 dark:text-slate-600';
   }
 }
 
@@ -117,14 +121,14 @@ export function ToastNotification({
         {/* Content */}
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h4 className="text-sm font-semibold leading-tight">
+            <h4 className="text-sm font-semibold leading-tight text-white dark:text-slate-900">
               {notification.title}
             </h4>
             {notification.isDismissible && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 shrink-0 -mt-0.5 -mr-1"
+                className="h-6 w-6 shrink-0 -mt-0.5 -mr-1 text-white dark:text-slate-900 hover:bg-white/20 dark:hover:bg-slate-900/10"
                 onClick={handleDismiss}
               >
                 <X className="h-4 w-4" />
@@ -133,7 +137,7 @@ export function ToastNotification({
           </div>
 
           {notification.message && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="text-sm text-slate-300 dark:text-slate-700 line-clamp-2">
               {notification.message}
             </p>
           )}
@@ -143,7 +147,7 @@ export function ToastNotification({
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="h-7 text-xs border-slate-600 dark:border-slate-400 text-white dark:text-slate-900 hover:bg-white/20 dark:hover:bg-slate-900/10"
               onClick={handleNavigate}
             >
               <ExternalLink className="mr-1 h-3 w-3" />
