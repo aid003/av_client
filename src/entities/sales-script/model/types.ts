@@ -90,6 +90,7 @@ export interface QuestionBlockConfig {
 export interface RouterBlockConfig {
   mode: RouterMode;
   instruction: string;
+  deferUntilNextUser?: boolean;
 
   // LLM настройки
   model?: string;

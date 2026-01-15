@@ -3,7 +3,6 @@
 import { useRef } from 'react';
 import { Label } from '@/shared/ui/components/ui/label';
 import { Textarea } from '@/shared/ui/components/ui/textarea';
-import { Switch } from '@/shared/ui/components/ui/switch';
 import { Badge } from '@/shared/ui/components/ui/badge';
 import { Card } from '@/shared/ui/components/ui/card';
 import type { MessageBlockConfig, ScriptSlot } from '@/entities/sales-script';
@@ -70,15 +69,6 @@ export function MessageBlockForm({
           onChange={(e) => onUpdate({ text: e.target.value })}
           placeholder="Текст, который увидит клиент..."
           rows={4}
-        />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <Label htmlFor="enable-templating">Использовать переменные</Label>
-        <Switch
-          id="enable-templating"
-          checked={config.enableTemplating || false}
-          onCheckedChange={(checked) => onUpdate({ enableTemplating: checked })}
         />
       </div>
 

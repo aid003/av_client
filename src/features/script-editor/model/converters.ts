@@ -180,6 +180,7 @@ function getDefaultBlockConfig(type: ScriptBlockType): ScriptBlock['config'] {
       return {
         mode: 'YES_NO_OTHER',
         instruction: '',
+        deferUntilNextUser: false,
       };
     case 'LLM_REPLY':
       return {
@@ -246,4 +247,3 @@ export function nodeToBlock(node: ScriptNode): ScriptBlock {
     config: node.data.config,
   };
 }
-

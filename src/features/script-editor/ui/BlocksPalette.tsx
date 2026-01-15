@@ -71,6 +71,25 @@ const BLOCK_TYPES: BlockTypeItem[] = [
   },
 ];
 
+const BLOCK_GROUPS: Array<{ title: string; types: ScriptBlockType[] }> = [
+  {
+    title: 'Блоки начала',
+    types: ['START'],
+  },
+  {
+    title: 'Блоки диалога',
+    types: ['MESSAGE', 'QUESTION', 'LLM_REPLY'],
+  },
+  {
+    title: 'Блоки логики',
+    types: ['ROUTER'],
+  },
+  {
+    title: 'Блоки завершения',
+    types: ['END'],
+  },
+];
+
 interface BlocksPaletteProps {
   hasStartBlock?: boolean;
   isCollapsed?: boolean;
@@ -78,6 +97,7 @@ interface BlocksPaletteProps {
 
 export function BlocksPalette({ hasStartBlock = false, isCollapsed = false }: BlocksPaletteProps) {
   const { togglePaletteCollapse } = useScriptEditorActions();
+  const blockTypeMap = new Map(BLOCK_TYPES.map((block) => [block.type, block]));
 
   const onDragStart = (event: DragEvent, type: ScriptBlockType) => {
     event.dataTransfer.setData('application/reactflow-type', type);
@@ -113,47 +133,59 @@ export function BlocksPalette({ hasStartBlock = false, isCollapsed = false }: Bl
 
       {/* Blocks list */}
       <div className={cn(
-        "p-3 space-y-1.5 overflow-y-auto",
+        "p-3 space-y-4 overflow-y-auto",
         isCollapsed ? "px-2" : "px-4"
       )}>
-        {BLOCK_TYPES.map((block) => {
-          const isDisabled = block.disabled || (block.type === 'START' && hasStartBlock);
-
-          return (
-            <div
-              key={block.type}
-              draggable={!isDisabled}
-              onDragStart={(e) => onDragStart(e, block.type)}
-              title={isCollapsed ? `${block.label} - ${block.description}` : undefined}
-              className={cn(
-                'flex items-center rounded-lg border cursor-grab transition-all',
-                'hover:bg-muted/50 hover:border-primary/50',
-                'active:cursor-grabbing',
-                isCollapsed ? 'p-2 justify-center' : 'gap-3 p-2.5',
-                isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:border-border'
-              )}
-            >
-              <div
-                className={cn(
-                  'shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-white',
-                  block.iconBgColor
-                )}
-              >
-                {block.icon}
+        {BLOCK_GROUPS.map((group) => (
+          <div key={group.title} className="space-y-1.5">
+            {!isCollapsed && (
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                {group.title}
               </div>
+            )}
+            {group.types.map((type) => {
+              const block = blockTypeMap.get(type);
+              if (!block) return null;
 
-              {/* Text - only show when expanded */}
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{block.label}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {block.description}
+              const isDisabled = block.disabled || (block.type === 'START' && hasStartBlock);
+
+              return (
+                <div
+                  key={block.type}
+                  draggable={!isDisabled}
+                  onDragStart={(e) => onDragStart(e, block.type)}
+                  title={isCollapsed ? `${block.label} - ${block.description}` : undefined}
+                  className={cn(
+                    'flex items-center rounded-lg border cursor-grab transition-all',
+                    'hover:bg-muted/50 hover:border-primary/50',
+                    'active:cursor-grabbing',
+                    isCollapsed ? 'p-2 justify-center' : 'gap-3 p-2.5',
+                    isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:border-border'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-white',
+                      block.iconBgColor
+                    )}
+                  >
+                    {block.icon}
                   </div>
+
+                  {/* Text - only show when expanded */}
+                  {!isCollapsed && (
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{block.label}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {block.description}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Helper text - only show when expanded */}
@@ -167,4 +199,3 @@ export function BlocksPalette({ hasStartBlock = false, isCollapsed = false }: Bl
     </div>
   );
 }
-
