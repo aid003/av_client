@@ -4,6 +4,7 @@ import type {
   TelegramAuthError,
 } from "@/shared/types/telegram";
 import { config } from "@/shared/lib/config";
+import { getStoredImpersonationToken } from "@/shared/lib/impersonation";
 
 export class UserBlockedError extends Error {
   public readonly code: "USER_BLOCKED" = "USER_BLOCKED";
@@ -33,13 +34,20 @@ export async function authenticateTelegram(
 
   let response: Response;
   try {
+    const impersonationToken = getStoredImpersonationToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+
+    if (impersonationToken) {
+      headers["x-impersonation-token"] = impersonationToken;
+    }
+
     response = await fetch(url, {
       method: "POST",
       mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
   } catch (e) {

@@ -17,15 +17,21 @@ export async function POST(request: NextRequest) {
     }
 
     const backendUrl = `${config.apiBaseUrl}/api/auth/telegram`;
+    const impersonationToken = request.headers.get('x-impersonation-token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    if (impersonationToken) {
+      headers['x-impersonation-token'] = impersonationToken;
+    }
 
     let response: Response;
     try {
       response = await fetch(backendUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
+        headers,
         body: JSON.stringify(body),
       });
     } catch (fetchError) {
@@ -118,4 +124,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

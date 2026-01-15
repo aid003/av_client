@@ -1,4 +1,6 @@
 import { config } from '@/shared/lib/config';
+import { getStoredImpersonationToken } from '@/shared/lib/impersonation';
+import { handleImpersonationHttpError, useImpersonationStore } from '@/shared/lib/impersonation-store';
 import { validateRequestUrl, validateRequestBody } from '@/shared/lib/security-validator.util';
 
 export class ApiError extends Error {
@@ -124,6 +126,34 @@ export class ApiClient {
     return urlString;
   }
 
+  private buildHeaders(extra?: HeadersInit): Headers {
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    });
+
+    if (extra) {
+      new Headers(extra).forEach((value, key) => headers.set(key, value));
+    }
+
+    const impersonationToken =
+      getStoredImpersonationToken() || useImpersonationStore.getState().token;
+    if (impersonationToken) {
+      headers.set('x-impersonation-token', impersonationToken);
+
+      if (process.env.NODE_ENV === 'development') {
+        // Не логируем сам токен, только факт и длину
+        // eslint-disable-next-line no-console
+        console.log('[API][impersonation] header attached', {
+          length: impersonationToken.length,
+          preview: `${impersonationToken.slice(0, 6)}...${impersonationToken.slice(-6)}`,
+        });
+      }
+    }
+
+    return headers;
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
@@ -189,6 +219,8 @@ export class ApiClient {
           'Ошибка при обращении к внешнему сервису. Попробуйте выполнить действие позже.';
       }
 
+      handleImpersonationHttpError(response.status, errorMessage);
+
       throw new ApiError(
         response.status,
         response.statusText,
@@ -245,11 +277,7 @@ export class ApiClient {
           {
             method: 'GET',
             mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              ...options?.headers,
-            },
+            headers: this.buildHeaders(options?.headers),
             signal: options?.signal,
           },
           timeout
@@ -306,11 +334,7 @@ export class ApiClient {
           {
             method: 'POST',
             mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              ...options?.headers,
-            },
+            headers: this.buildHeaders(options?.headers),
             body: data ? JSON.stringify(data) : undefined,
             signal: options?.signal,
           },
@@ -367,11 +391,7 @@ export class ApiClient {
           {
             method: 'PUT',
             mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              ...options?.headers,
-            },
+            headers: this.buildHeaders(options?.headers),
             body: data ? JSON.stringify(data) : undefined,
             signal: options?.signal,
           },
@@ -416,11 +436,7 @@ export class ApiClient {
           {
             method: 'DELETE',
             mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              ...options?.headers,
-            },
+            headers: this.buildHeaders(options?.headers),
             body: data ? JSON.stringify(data) : undefined,
             signal: options?.signal,
           },
@@ -477,11 +493,7 @@ export class ApiClient {
           {
             method: 'PATCH',
             mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              ...options?.headers,
-            },
+            headers: this.buildHeaders(options?.headers),
             body: data ? JSON.stringify(data) : undefined,
             signal: options?.signal,
           },
