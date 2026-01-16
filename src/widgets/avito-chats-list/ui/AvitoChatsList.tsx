@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, memo } from 'react';
+import { useEffect, memo, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
 import {
   ChatListItem,
   useChatsForTenant,
   useChatsLoading,
+  useChatsLoadingMore,
   useChatsError,
+  useChatsHasMore,
+  useChatsTotal,
   useChatsActions,
   type Chat,
 } from '@/entities/avito-chat';
@@ -24,6 +27,7 @@ interface AvitoChatsListProps {
 
 // Интервал обновления в миллисекундах (15 секунд)
 const POLLING_INTERVAL = 15000;
+const CHATS_PAGE_LIMIT = 50;
 
 // Мемоизированный элемент чата
 const MemoizedChatItem = memo<{
@@ -43,23 +47,48 @@ export function AvitoChatsList({
 }: AvitoChatsListProps) {
   const chats = useChatsForTenant(tenantId);
   const isLoading = useChatsLoading(tenantId);
+  const isLoadingMore = useChatsLoadingMore(tenantId);
   const error = useChatsError(tenantId);
-  const { loadChats, refreshChats } = useChatsActions();
+  const hasMore = useChatsHasMore(tenantId);
+  const total = useChatsTotal(tenantId);
+  const { loadChats, loadMoreChats, refreshChats } = useChatsActions();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // Загрузка чатов при монтировании
   useEffect(() => {
-    loadChats(tenantId);
+    loadChats(tenantId, CHATS_PAGE_LIMIT);
   }, [tenantId, loadChats]);
 
   // Polling для автоматического обновления
   usePolling(
-    () => refreshChats(tenantId),
+    () => refreshChats(tenantId, CHATS_PAGE_LIMIT),
     {
       interval: POLLING_INTERVAL,
       refreshOnFocus: true,
-      enabled: !isLoading,
+      enabled: !isLoading && !isLoadingMore,
     }
   );
+
+  // Infinite scroll через sentinel
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isLoading && !isLoadingMore) {
+          loadMoreChats(tenantId, CHATS_PAGE_LIMIT);
+        }
+      },
+      { rootMargin: '200px 0px', threshold: 0 }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [tenantId, hasMore, isLoading, isLoadingMore, loadMoreChats]);
 
   if (isLoading) {
     return (
@@ -120,12 +149,14 @@ export function AvitoChatsList({
       <div>
         <h2 className="text-2xl font-semibold">Чаты</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Показано {chats.length}{' '}
-          {chats.length === 1
-            ? 'чат'
-            : chats.length < 5
-              ? 'чата'
-              : 'чатов'}
+          {(() => {
+            const totalCount = typeof total === 'number' ? total : chats.length;
+            const plural =
+              totalCount === 1 ? 'чат' : totalCount < 5 ? 'чата' : 'чатов';
+            const totalLabel =
+              typeof total === 'number' ? ` из ${total}` : '';
+            return `Показано ${chats.length}${totalLabel} ${plural}`;
+          })()}
         </p>
       </div>
 
@@ -139,6 +170,27 @@ export function AvitoChatsList({
           />
         ))}
       </div>
+
+      {isLoadingMore && (
+        <div className="flex flex-col gap-2 max-w-2xl">
+          {[1, 2, 3].map((i) => (
+            <Card key={`more-${i}`}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <Skeleton className="h-3 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <div ref={loadMoreRef} className="h-1" />
 
       {error && (
         <Alert variant="destructive">

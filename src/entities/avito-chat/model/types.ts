@@ -202,5 +202,10 @@ export interface ChatItem {
 }
 
 // Ответы API
-export type ChatsResponse = Chat[];
+export interface ChatsResponse {
+  items: Chat[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+}
 export type MessagesResponse = Message[];
