@@ -8,11 +8,12 @@ export type ScriptBlockType =
   | 'MESSAGE'
   | 'QUESTION'
   | 'ROUTER'
+  | 'MULTI_ROUTER'
   | 'LLM_REPLY'
   | 'END';
 
 /** Типы условий переходов */
-export type EdgeConditionType = 'ALWAYS' | 'YES' | 'NO' | 'OTHER';
+export type EdgeConditionType = 'ALWAYS' | 'YES' | 'NO' | 'OTHER' | 'CHOICE';
 
 /** Типы слотов */
 export type SlotType = 'string' | 'number' | 'boolean' | 'enum';
@@ -35,6 +36,7 @@ export interface LlmScriptSettings {
   defaultModels?: {
     generateReply?: string;
     classifyYesNoOther?: string;
+    classifyMultiChoice?: string;
     extractSlots?: string;
     isAnswerRelevant?: string;
     rephraseQuestion?: string;
@@ -45,6 +47,7 @@ export interface LlmScriptSettings {
   defaultPrompts?: {
     generateReply?: string;
     classifyYesNoOther?: string;
+    classifyMultiChoice?: string;
     extractSlots?: string;
     isAnswerRelevant?: string;
     rephraseQuestion?: string;
@@ -97,6 +100,22 @@ export interface RouterBlockConfig {
   systemPrompt?: string;
 }
 
+export interface MultiRouterQuestion {
+  id: string;
+  text: string;
+}
+
+export interface MultiRouterBlockConfig {
+  questions: MultiRouterQuestion[];
+  instruction?: string;
+  minConfidence?: number;
+  deferUntilNextUser?: boolean;
+
+  // LLM настройки
+  model?: string;
+  systemPrompt?: string;
+}
+
 export interface LLMReplyBlockConfig {
   instruction: string;
   useKnowledgeBase?: boolean;
@@ -119,6 +138,7 @@ export type ScriptBlockConfig =
   | MessageBlockConfig
   | QuestionBlockConfig
   | RouterBlockConfig
+  | MultiRouterBlockConfig
   | LLMReplyBlockConfig
   | EndBlockConfig;
 
@@ -137,6 +157,7 @@ export interface ScriptBlock<T extends ScriptBlockConfig = ScriptBlockConfig> {
 
 export interface EdgeCondition {
   type: EdgeConditionType;
+  value?: string;
 }
 
 // --- Связь между блоками ---

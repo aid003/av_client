@@ -10,6 +10,8 @@ export type {
   MessageBlockConfig,
   QuestionBlockConfig,
   RouterBlockConfig,
+  MultiRouterBlockConfig,
+  MultiRouterQuestion,
   LLMReplyBlockConfig,
   EndBlockConfig,
   ScriptBlockConfig,

@@ -18,6 +18,7 @@ import {
   MessageBlockForm,
   QuestionBlockForm,
   RouterBlockForm,
+  MultiRouterBlockForm,
   LLMReplyBlockForm,
   EndBlockForm,
   getBlockTypeLabel,
@@ -26,6 +27,7 @@ import type {
   MessageBlockConfig,
   QuestionBlockConfig,
   RouterBlockConfig,
+  MultiRouterBlockConfig,
   LLMReplyBlockConfig,
   EndBlockConfig,
 } from '@/entities/sales-script';
@@ -245,6 +247,13 @@ export function BlockEditPopover() {
           {blockType === 'ROUTER' && (
             <RouterBlockForm
               config={selectedNode.data.config as RouterBlockConfig}
+              onUpdate={handleConfigUpdate}
+            />
+          )}
+
+          {blockType === 'MULTI_ROUTER' && (
+            <MultiRouterBlockForm
+              config={selectedNode.data.config as MultiRouterBlockConfig}
               onUpdate={handleConfigUpdate}
             />
           )}

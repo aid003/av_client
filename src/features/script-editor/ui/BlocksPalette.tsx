@@ -56,6 +56,13 @@ const BLOCK_TYPES: BlockTypeItem[] = [
     iconBgColor: 'bg-purple-500',
   },
   {
+    type: 'MULTI_ROUTER',
+    label: 'Мульти-ветвление',
+    description: 'Выбор из списка',
+    icon: <GitBranch className="w-4 h-4" />,
+    iconBgColor: 'bg-indigo-500',
+  },
+  {
     type: 'LLM_REPLY',
     label: 'Ответ ИИ',
     description: 'Нейросеть формирует ответ',
@@ -82,7 +89,7 @@ const BLOCK_GROUPS: Array<{ title: string; types: ScriptBlockType[] }> = [
   },
   {
     title: 'Блоки логики',
-    types: ['ROUTER'],
+    types: ['ROUTER', 'MULTI_ROUTER'],
   },
   {
     title: 'Блоки завершения',

@@ -19,6 +19,7 @@ import type {
   MessageBlockConfig,
   QuestionBlockConfig,
   RouterBlockConfig,
+  MultiRouterBlockConfig,
   LLMReplyBlockConfig,
   EndBlockConfig,
 } from '@/entities/sales-script';
@@ -27,6 +28,7 @@ import {
   MessageBlockForm,
   QuestionBlockForm,
   RouterBlockForm,
+  MultiRouterBlockForm,
   LLMReplyBlockForm,
   EndBlockForm,
   getBlockTypeLabel,
@@ -257,6 +259,15 @@ function NodePropertiesForm({
           />
         )}
 
+        {blockType === 'MULTI_ROUTER' && (
+          <MultiRouterBlockForm
+            config={node.data.config as MultiRouterBlockConfig}
+            onUpdate={(config) =>
+              onUpdate({ config: { ...node.data.config, ...config } })
+            }
+          />
+        )}
+
         {blockType === 'LLM_REPLY' && (
           <LLMReplyBlockForm
             config={node.data.config as LLMReplyBlockConfig}
@@ -278,5 +289,4 @@ function NodePropertiesForm({
     </ScrollArea>
   );
 }
-
 

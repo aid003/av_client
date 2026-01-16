@@ -236,7 +236,7 @@ export function EditorCanvas() {
         panOnDrag={isMobile ? [1, 2] : [2]}
         panOnScroll={true}
         panActivationKeyCode="Space"
-        selectionOnDrag={!isMobile}
+        selectionOnDrag={false}
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode="Meta"
         deleteKeyCode={['Delete', 'Backspace']}
@@ -280,4 +280,3 @@ export function EditorCanvas() {
     </div>
   );
 }
-

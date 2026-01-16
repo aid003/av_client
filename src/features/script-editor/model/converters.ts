@@ -4,7 +4,7 @@ import type {
   ScriptBlock,
   ScriptEdge,
   ScriptBlockType,
-  EdgeConditionType,
+  EdgeCondition,
 } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge, ScriptNodeData } from './types';
 
@@ -31,7 +31,7 @@ export function definitionToFlow(definition: ScriptDefinition): {
     id: edge.id,
     source: edge.from,
     target: edge.to,
-    sourceHandle: getSourceHandle(edge.condition.type),
+    sourceHandle: getSourceHandle(edge.condition),
     label: edge.label,
     type: 'smoothstep',
     animated: edge.condition.type !== 'ALWAYS',
@@ -39,6 +39,7 @@ export function definitionToFlow(definition: ScriptDefinition): {
     data: {
       edgeId: edge.id,
       conditionType: edge.condition.type,
+      conditionValue: edge.condition.value,
       label: edge.label,
     },
   }));
@@ -63,15 +64,24 @@ export function flowToDefinition(
     config: node.data.config,
   }));
 
-  const scriptEdges: ScriptEdge[] = edges.map((edge) => ({
-    id: edge.id,
-    from: edge.source,
-    to: edge.target,
-    condition: {
-      type: edge.data?.conditionType || 'ALWAYS',
-    },
-    label: edge.data?.label || edge.label?.toString(),
-  }));
+  const scriptEdges: ScriptEdge[] = edges.map((edge) => {
+    const conditionType = edge.data?.conditionType || 'ALWAYS';
+    const conditionValue =
+      edge.data?.conditionValue || getChoiceValueFromHandle(edge.sourceHandle);
+
+    const condition: EdgeCondition = { type: conditionType };
+    if (conditionType === 'CHOICE' && conditionValue) {
+      condition.value = conditionValue;
+    }
+
+    return {
+      id: edge.id,
+      from: edge.source,
+      to: edge.target,
+      condition,
+      label: edge.data?.label || edge.label?.toString(),
+    };
+  });
 
   return {
     version: 1,
@@ -84,17 +94,25 @@ export function flowToDefinition(
 /**
  * Определяет source handle для ребра по типу условия
  */
-function getSourceHandle(conditionType: EdgeConditionType): string | undefined {
-  switch (conditionType) {
+function getSourceHandle(condition: EdgeCondition): string | undefined {
+  switch (condition.type) {
     case 'YES':
       return 'yes';
     case 'NO':
       return 'no';
     case 'OTHER':
       return 'other';
+    case 'CHOICE':
+      return condition.value ? `choice-${condition.value}` : undefined;
     default:
       return undefined;
   }
+}
+
+function getChoiceValueFromHandle(sourceHandle?: string | null): string | undefined {
+  if (!sourceHandle) return undefined;
+  if (!sourceHandle.startsWith('choice-')) return undefined;
+  return sourceHandle.slice('choice-'.length) || undefined;
 }
 
 /**
@@ -148,6 +166,8 @@ function getDefaultBlockTitle(type: ScriptBlockType): string {
       return 'Вопрос';
     case 'ROUTER':
       return 'Разветвление';
+    case 'MULTI_ROUTER':
+      return 'Множественное ветвление';
     case 'LLM_REPLY':
       return 'Ответ ИИ';
     case 'END':
@@ -180,6 +200,13 @@ function getDefaultBlockConfig(type: ScriptBlockType): ScriptBlock['config'] {
       return {
         mode: 'YES_NO_OTHER',
         instruction: '',
+        deferUntilNextUser: false,
+      };
+    case 'MULTI_ROUTER':
+      return {
+        questions: [],
+        instruction: '',
+        minConfidence: 0.6,
         deferUntilNextUser: false,
       };
     case 'LLM_REPLY':

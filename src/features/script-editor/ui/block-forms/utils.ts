@@ -10,6 +10,8 @@ export function getBlockTypeLabel(type: ScriptBlockType): string {
       return 'Вопрос';
     case 'ROUTER':
       return 'Разветвление';
+    case 'MULTI_ROUTER':
+      return 'Множественное ветвление';
     case 'LLM_REPLY':
       return 'Ответ ИИ';
     case 'END':

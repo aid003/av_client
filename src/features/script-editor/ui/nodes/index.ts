@@ -4,6 +4,7 @@ import { EndNode } from './EndNode';
 import { MessageNode } from './MessageNode';
 import { QuestionNode } from './QuestionNode';
 import { RouterNode } from './RouterNode';
+import { MultiRouterNode } from './MultiRouterNode';
 import { LLMReplyNode } from './LLMReplyNode';
 
 export { BaseNode } from './BaseNode';
@@ -12,6 +13,7 @@ export { EndNode } from './EndNode';
 export { MessageNode } from './MessageNode';
 export { QuestionNode } from './QuestionNode';
 export { RouterNode } from './RouterNode';
+export { MultiRouterNode } from './MultiRouterNode';
 export { LLMReplyNode } from './LLMReplyNode';
 
 /**
@@ -23,6 +25,6 @@ export const nodeTypes: NodeTypes = {
   MESSAGE: MessageNode,
   QUESTION: QuestionNode,
   ROUTER: RouterNode,
+  MULTI_ROUTER: MultiRouterNode,
   LLM_REPLY: LLMReplyNode,
 };
-

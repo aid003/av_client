@@ -16,6 +16,7 @@ import type {
   LlmScriptSettings,
   ValidationIssue,
   ScriptValidationResult,
+  MultiRouterBlockConfig,
 } from '@/entities/sales-script';
 import type { ScriptNode, ScriptFlowEdge, SelectionState, PopoverState } from './types';
 import {
@@ -107,7 +108,7 @@ interface ScriptEditorState {
   onConnect: (connection: Connection) => void;
   updateEdge: (
     edgeId: string,
-    updates: { conditionType?: EdgeConditionType; label?: string }
+    updates: { conditionType?: EdgeConditionType; conditionValue?: string; label?: string }
   ) => void;
   deleteEdge: (edgeId: string) => void;
 
@@ -395,6 +396,7 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     // Определяем тип условия по sourceHandle
     let conditionType: EdgeConditionType = 'ALWAYS';
     let label = 'Далее';
+    let conditionValue: string | undefined;
 
     if (connection.sourceHandle === 'yes') {
       conditionType = 'YES';
@@ -405,6 +407,13 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
     } else if (connection.sourceHandle === 'other') {
       conditionType = 'OTHER';
       label = 'Другое';
+    } else if (connection.sourceHandle?.startsWith('choice-')) {
+      conditionType = 'CHOICE';
+      conditionValue = connection.sourceHandle.slice('choice-'.length);
+      const sourceNode = get().nodes.find((node) => node.id === connection.source);
+      const questions = (sourceNode?.data.config as MultiRouterBlockConfig | undefined)?.questions || [];
+      const matchedQuestion = questions.find((question) => question.id === conditionValue);
+      label = matchedQuestion?.text || conditionValue || 'Вариант';
     }
 
     const newEdge: ScriptFlowEdge = {
@@ -420,6 +429,7 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
       data: {
         edgeId,
         conditionType,
+        conditionValue,
         label,
       },
     };
@@ -440,6 +450,7 @@ export const useScriptEditorStore = create<ScriptEditorState>()((set, get) => ({
               data: {
                 ...edge.data!,
                 conditionType: updates.conditionType ?? edge.data!.conditionType,
+                conditionValue: updates.conditionValue ?? edge.data!.conditionValue,
                 label: updates.label ?? edge.data!.label,
               },
             }
@@ -893,4 +904,3 @@ export const useScriptEditorActions = () =>
 
 export const useConstructorSchema = () =>
   useScriptEditorStore((state) => state.constructorSchema);
-

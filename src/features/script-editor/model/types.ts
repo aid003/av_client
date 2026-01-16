@@ -28,6 +28,7 @@ export type ScriptNode = Node<ScriptNodeData, ScriptBlockType>;
 export interface ScriptEdgeData extends Record<string, unknown> {
   edgeId: string;
   conditionType: EdgeConditionType;
+  conditionValue?: string;
   label?: string;
 }
 
@@ -68,4 +69,3 @@ export interface PopoverState {
   nodeId: string | null;
   anchorPosition: { x: number; y: number } | null;
 }
-

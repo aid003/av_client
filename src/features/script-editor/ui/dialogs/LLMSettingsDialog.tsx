@@ -51,6 +51,7 @@ interface LLMSettingsDialogProps {
 const DEFAULT_MODELS: NonNullable<LlmScriptSettings['defaultModels']> = {
   generateReply: 'gpt-4.1-mini',
   classifyYesNoOther: 'gpt-4o-mini',
+  classifyMultiChoice: 'gpt-4o-mini',
   extractSlots: 'gpt-4o-mini',
   isAnswerRelevant: 'gpt-4o-mini',
   rephraseQuestion: 'gpt-4.1-mini',
@@ -360,6 +361,30 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                   showReset={false}
                 />
 
+                {/* classifyMultiChoice */}
+                <ModelSelect
+                  label={
+                    <div className="flex items-center gap-2">
+                      <span>Модель для мульти-ветвления</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            {getOperationInfo('classifyMultiChoice')?.description ||
+                              'Используется в блоках MULTI_ROUTER для выбора одной ветки'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  }
+                  value={localSettings.defaultModels?.classifyMultiChoice}
+                  onChange={(value) => updateModel('classifyMultiChoice', value)}
+                  showBadge={false}
+                  showReset={false}
+                />
+
                 {/* extractSlots */}
                 <ModelSelect
                   label={
@@ -571,6 +596,57 @@ export function LLMSettingsDialog({ open, onOpenChange, tenantId }: LLMSettingsD
                     value={localSettings.defaultPrompts?.classifyYesNoOther || getDefaultPrompt('classifyYesNoOther')}
                     onChange={(e) => updatePrompt('classifyYesNoOther', e.target.value || undefined)}
                     placeholder="Системный промпт для классификации"
+                    rows={3}
+                  />
+                </div>
+
+                {/* classifyMultiChoice prompt */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label>Промпт для мульти-ветвления</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            {getPromptDescription('classifyMultiChoice') ||
+                              'Системный промпт для блоков MULTI_ROUTER'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => resetPromptToTemplate('classifyMultiChoice')}
+                      >
+                        Шаблон
+                      </Button>
+                      {localSettings.defaultPrompts?.classifyMultiChoice && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updatePrompt('classifyMultiChoice', undefined)}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <Textarea
+                    value={
+                      localSettings.defaultPrompts?.classifyMultiChoice ||
+                      getDefaultPrompt('classifyMultiChoice')
+                    }
+                    onChange={(e) =>
+                      updatePrompt('classifyMultiChoice', e.target.value || undefined)
+                    }
+                    placeholder="Системный промпт для мульти-ветвления"
                     rows={3}
                   />
                 </div>
