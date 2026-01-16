@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { AlertCircle, MessageSquare } from 'lucide-react';
+import { AlertCircle, MessageSquare, AlertTriangle } from 'lucide-react';
 import {
   useMessagesForChat,
   useMessagesLoading,
   useMessagesError,
   useMessagesActions,
+  useChatsActions,
+  enableChatScript,
   type Chat,
 } from '@/entities/avito-chat';
 import { getLeadByChatId, type Lead } from '@/entities/lead';
@@ -19,6 +21,7 @@ import { ItemInfoCard } from './ItemInfoCard';
 import { Skeleton } from '@/shared/ui/components/ui/skeleton';
 import { Card, CardContent } from '@/shared/ui/components/ui/card';
 import { ScrollArea } from '@/shared/ui/components/ui/scroll-area';
+import { Button } from '@/shared/ui/components/ui/button';
 
 interface ChatViewProps {
   chat: Chat;
@@ -38,10 +41,19 @@ export function ChatView({
   const isLoading = useMessagesLoading(chat.id);
   const error = useMessagesError(chat.id);
   const { loadMessages, refreshMessages } = useMessagesActions();
+  const { refreshChats } = useChatsActions();
   const { authData } = useTelegramAuth();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatLead, setChatLead] = useState<Lead | null>(null);
+  const [isScriptDisabled, setIsScriptDisabled] = useState(
+    !!chat.scriptDisabledByManager
+  );
+  const [scriptDisabledAt, setScriptDisabledAt] = useState<string | null>(
+    chat.scriptDisabledAt ?? null
+  );
+  const [isEnablingScript, setIsEnablingScript] = useState(false);
+  const [scriptEnableError, setScriptEnableError] = useState<string | null>(null);
 
   const tenantId = authData?.tenant.id;
 
@@ -62,6 +74,12 @@ export function ChatView({
     }
     loadChatLead();
   }, [chat.chatId, tenantId]);
+
+  useEffect(() => {
+    setIsScriptDisabled(!!chat.scriptDisabledByManager);
+    setScriptDisabledAt(chat.scriptDisabledAt ?? null);
+    setScriptEnableError(null);
+  }, [chat.id, chat.scriptDisabledByManager, chat.scriptDisabledAt]);
 
   // Polling для автоматического обновления сообщений
   usePolling(
@@ -86,6 +104,40 @@ export function ChatView({
 
   // Получаем информацию о товаре из context
   const itemInfo = chat.context?.type === 'item' ? chat.context.value : null;
+
+  const formattedDisabledAt = useMemo(() => {
+    if (!scriptDisabledAt) return null;
+    const date = new Date(scriptDisabledAt);
+    if (Number.isNaN(date.getTime())) return null;
+    try {
+      return date.toLocaleString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return null;
+    }
+  }, [scriptDisabledAt]);
+
+  const handleEnableScript = async () => {
+    if (!tenantId) return;
+    setScriptEnableError(null);
+    setIsEnablingScript(true);
+    try {
+      await enableChatScript(chat.id, tenantId);
+      setIsScriptDisabled(false);
+      setScriptDisabledAt(null);
+      refreshChats(tenantId);
+    } catch (err) {
+      setScriptEnableError(
+        err instanceof Error ? err.message : 'Не удалось включить ИИ-скрипт'
+      );
+    } finally {
+      setIsEnablingScript(false);
+    }
+  };
 
   // Определяем authorId текущего пользователя (владельца аккаунта)
   const currentUserAuthorId = useMemo(() => {
@@ -120,6 +172,42 @@ export function ChatView({
         onBack={onBack}
         showBackButton={showBackButton}
       />
+
+      {isScriptDisabled && (
+        <div className="px-4 py-3 border-b shrink-0">
+          <div className="rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2 min-w-0">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">
+                    ИИ-скрипт отключен менеджером
+                  </div>
+                  <div className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                    {formattedDisabledAt
+                      ? `Отключен ${formattedDisabledAt}`
+                      : 'Чтобы продолжить, включите скрипт вручную'}
+                  </div>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleEnableScript}
+                disabled={isEnablingScript || !tenantId}
+                className="border-amber-300/80 text-amber-900 hover:bg-amber-100 dark:border-amber-700/70 dark:text-amber-100 dark:hover:bg-amber-900/40"
+              >
+                {isEnablingScript ? 'Возвращаем…' : 'Вернуть ИИ'}
+              </Button>
+            </div>
+            {scriptEnableError && (
+              <div className="mt-2 text-xs text-red-600 dark:text-red-300">
+                {scriptEnableError}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Карточка товара (для u2i чатов) */}
       {chat.chatType === 'u2i' && itemInfo && (

@@ -11,7 +11,12 @@ interface AdKbState {
   linksByAdId: Record<string, AdKnowledgeBaseLink[] | undefined>;
   loadingByAdId: Record<string, boolean | undefined>;
   errorsByAdId: Record<string, string | null | undefined>;
-  loadLinks: (adId: string, tenantId: string, force?: boolean) => Promise<void>;
+  lastLoadedAtByAdId: Record<string, number | undefined>;
+  loadLinks: (
+    adId: string,
+    tenantId: string,
+    options?: boolean | { force?: boolean; staleAfterMs?: number }
+  ) => Promise<void>;
   setLinks: (adId: string, links: AdKnowledgeBaseLink[]) => void;
   attachLinks: (
     adIds: string[],
@@ -23,15 +28,35 @@ interface AdKbState {
   clearAd: (adId: string) => void;
 }
 
+const DEFAULT_STALE_AFTER_MS = 30_000;
+
+const normalizeLoadLinksOptions = (
+  options?: boolean | { force?: boolean; staleAfterMs?: number }
+) => {
+  if (typeof options === 'boolean') {
+    return { force: options, staleAfterMs: DEFAULT_STALE_AFTER_MS };
+  }
+  return {
+    force: options?.force ?? false,
+    staleAfterMs: options?.staleAfterMs ?? DEFAULT_STALE_AFTER_MS,
+  };
+};
+
 export const useAdKbStore = create<AdKbState>()((set, get) => ({
   linksByAdId: {},
   loadingByAdId: {},
   errorsByAdId: {},
+  lastLoadedAtByAdId: {},
 
-  async loadLinks(adId, tenantId, force = false) {
+  async loadLinks(adId, tenantId, options) {
+    const { force, staleAfterMs } = normalizeLoadLinksOptions(options);
     const state = get();
     if (state.loadingByAdId[adId]) return;
-    if (!force && state.linksByAdId[adId]) return;
+    const hasCache = state.linksByAdId[adId] !== undefined;
+    const lastLoadedAt = state.lastLoadedAtByAdId[adId];
+    const isStale =
+      lastLoadedAt === undefined || Date.now() - lastLoadedAt >= staleAfterMs;
+    if (!force && hasCache && !isStale) return;
 
     set((s) => ({
       loadingByAdId: { ...s.loadingByAdId, [adId]: true },
@@ -43,6 +68,7 @@ export const useAdKbStore = create<AdKbState>()((set, get) => ({
       set((s) => ({
         linksByAdId: { ...s.linksByAdId, [adId]: resp.data },
         loadingByAdId: { ...s.loadingByAdId, [adId]: false },
+        lastLoadedAtByAdId: { ...s.lastLoadedAtByAdId, [adId]: Date.now() },
       }));
     } catch (err) {
       const message =
@@ -68,6 +94,7 @@ export const useAdKbStore = create<AdKbState>()((set, get) => ({
         // Обновляем кеш для конкретного объявления
         set((s) => ({
           linksByAdId: { ...s.linksByAdId, [adId]: resp.data },
+          lastLoadedAtByAdId: { ...s.lastLoadedAtByAdId, [adId]: Date.now() },
         }));
         return adId;
       })
@@ -96,6 +123,7 @@ export const useAdKbStore = create<AdKbState>()((set, get) => ({
           ...s.linksByAdId,
           [adId]: current.filter((l) => l.knowledgeBaseId !== kbId),
         },
+        lastLoadedAtByAdId: { ...s.lastLoadedAtByAdId, [adId]: Date.now() },
       };
     });
   },
@@ -105,10 +133,12 @@ export const useAdKbStore = create<AdKbState>()((set, get) => ({
       const { [adId]: _, ...restLinks } = s.linksByAdId;
       const { [adId]: __, ...restLoading } = s.loadingByAdId;
       const { [adId]: ___, ...restErrors } = s.errorsByAdId;
+      const { [adId]: ____, ...restLastLoadedAt } = s.lastLoadedAtByAdId;
       return {
         linksByAdId: restLinks,
         loadingByAdId: restLoading,
         errorsByAdId: restErrors,
+        lastLoadedAtByAdId: restLastLoadedAt,
       };
     });
   },
@@ -134,5 +164,3 @@ export const useAdKbActions = () =>
       clearAd: s.clearAd,
     }))
   );
-
-

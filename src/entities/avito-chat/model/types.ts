@@ -185,6 +185,8 @@ export interface Chat {
   participants: Participant[];
   context?: ChatContext;
   lastMessageContent?: LastMessageContent;
+  scriptDisabledByManager?: boolean;
+  scriptDisabledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

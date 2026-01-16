@@ -1,1 +1,1 @@
-export { getChats, getMessages } from './messenger';
+export { getChats, getMessages, enableChatScript } from './messenger';

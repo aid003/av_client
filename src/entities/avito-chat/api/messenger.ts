@@ -27,3 +27,17 @@ export async function getMessages(chatId: string): Promise<MessagesResponse> {
     `/api/avito-messenger/messages/${chatId}`
   );
 }
+
+/**
+ * Включить ИИ-скрипт в чате после ручного отключения
+ */
+export async function enableChatScript(
+  chatId: string,
+  tenantId: string
+): Promise<void> {
+  return apiClient.post<void>(
+    `/api/avito-messenger/chats/${chatId}/script/enable`,
+    undefined,
+    { params: { tenantId } }
+  );
+}

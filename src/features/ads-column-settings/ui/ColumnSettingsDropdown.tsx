@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
 } from '@/shared/ui/components/ui/dropdown-menu';
 import { Button } from '@/shared/ui/components/ui/button';
-import { useColumnSettings, useColumnSettingsActions } from '../model/store';
+import { useColumnSettingsActions } from '../model/store';
 import { COLUMN_LABELS } from '../lib/default-columns';
 import type { AvitoAd } from '@/entities/avito-ad';
 
@@ -24,21 +24,14 @@ export function ColumnSettingsDropdown({
   table,
   tenantId,
 }: ColumnSettingsDropdownProps) {
-  const settings = useColumnSettings(tenantId);
-  const { updateSettings, resetSettings } = useColumnSettingsActions();
+  const { resetSettings } = useColumnSettingsActions();
 
   const handleToggleColumn = (columnId: string, isVisible: boolean) => {
-    const newVisibility = {
-      ...settings.visibility,
-      [columnId]: isVisible,
-    };
-    updateSettings(tenantId, { visibility: newVisibility });
-    // Removed direct table update - controlled state handles it
+    table.getColumn(columnId)?.toggleVisibility(isVisible);
   };
 
   const handleResetSettings = () => {
     resetSettings(tenantId);
-    // Removed direct table updates - controlled state handles it
   };
 
   return (

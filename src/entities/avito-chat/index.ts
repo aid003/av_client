@@ -22,7 +22,7 @@ export type {
 } from './model/types';
 
 // API
-export { getChats, getMessages } from './api';
+export { getChats, getMessages, enableChatScript } from './api';
 
 // Store
 export {

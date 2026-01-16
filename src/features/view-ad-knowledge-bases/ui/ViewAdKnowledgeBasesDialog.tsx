@@ -50,13 +50,13 @@ export function ViewAdKnowledgeBasesDialog({
 
   useEffect(() => {
     if (open && adId) {
-      loadLinks(adId, tenantId);
+      loadLinks(adId, tenantId, { staleAfterMs: 0 });
     }
   }, [open, adId, tenantId, loadLinks]);
 
   const handleRefresh = () => {
     if (!adId) return;
-    loadLinks(adId, tenantId, true);
+    loadLinks(adId, tenantId, { force: true });
   };
 
   const handleDetach = (kbId: string, kbName: string) => {
@@ -185,5 +185,4 @@ export function ViewAdKnowledgeBasesDialog({
     </Dialog>
   );
 }
-
 

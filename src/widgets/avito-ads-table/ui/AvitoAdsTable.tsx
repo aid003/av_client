@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { AvitoAdsTable as AvitoAdsTableComponent, useTableAds, type AvitoAd, createColumns } from '@/entities/avito-ad';
 import { AdsSearch, AdsFilters, useAdsFilters } from '@/features/ads-filters';
-import { ColumnSettingsDropdown, useColumnSettings } from '@/features/ads-column-settings';
+import { ColumnSettingsDropdown, useColumnSettings, useColumnSettingsActions } from '@/features/ads-column-settings';
 import { SyncAvitoAdsButton } from '@/features/sync-avito-ads';
 import { ViewAdKnowledgeBasesDialog } from '@/features/view-ad-knowledge-bases';
 import { useAdKbActions } from '@/entities/ad-knowledge-link/model/store';
@@ -23,6 +23,7 @@ interface AvitoAdsTableProps {
 export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
   const filters = useAdsFilters(tenantId);
   const columnSettings = useColumnSettings(tenantId);
+  const { updateSettings } = useColumnSettingsActions();
 
   const {
     ads,
@@ -39,14 +40,7 @@ export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
   const [selectedAd, setSelectedAd] = useState<AvitoAd | null>(null);
   const [isKbDialogOpen, setIsKbDialogOpen] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    columnSettings.visibility
-  );
-
-  // Sync column visibility with settings
-  useEffect(() => {
-    setColumnVisibility(columnSettings.visibility);
-  }, [columnSettings.visibility]);
+  const columnVisibility = columnSettings.visibility;
 
   // Clear sorting state for hidden columns
   useEffect(() => {
@@ -89,7 +83,16 @@ export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
   // Create table instance
   const columns = useMemo(
     () => createColumns(handleViewKb),
-    [handleViewKb, columnVisibility]
+    [handleViewKb]
+  );
+
+  const handleColumnVisibilityChange = useCallback(
+    (updater: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => {
+      const next =
+        typeof updater === 'function' ? updater(columnVisibility) : updater;
+      updateSettings(tenantId, { visibility: next });
+    },
+    [columnVisibility, tenantId, updateSettings]
   );
 
   const table = useReactTable({
@@ -100,7 +103,7 @@ export function AvitoAdsTable({ tenantId }: AvitoAdsTableProps) {
       columnVisibility,
       sorting,
     },
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
